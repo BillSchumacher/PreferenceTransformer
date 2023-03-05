@@ -39,10 +39,7 @@ class DatasetWriter(object):
     def write_dataset(self, fname, max_size=None, compression='gzip'):
         np_data = {}
         for k in self.data:
-            if k == 'terminals':
-                dtype = np.bool_
-            else:
-                dtype = np.float32
+            dtype = np.bool_ if k == 'terminals' else np.float32
             data = np.array(self.data[k], dtype=dtype)
             if max_size is not None:
                 data = data[:max_size]

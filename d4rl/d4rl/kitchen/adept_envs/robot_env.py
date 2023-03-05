@@ -136,8 +136,9 @@ class RobotEnv(mujoco_env.MujocoEnv):
 
         robot_name = 'dds_robot' if not legacy and is_hardware else 'robot'
         if robot_name not in self.ROBOTS:
-            raise KeyError("Unsupported robot '{}', available: {}".format(
-                robot_name, list(self.ROBOTS.keys())))
+            raise KeyError(
+                f"Unsupported robot '{robot_name}', available: {list(self.ROBOTS.keys())}"
+            )
 
         cls = import_class_from_path(self.ROBOTS[robot_name])
 
@@ -146,16 +147,14 @@ class RobotEnv(mujoco_env.MujocoEnv):
             if not device_name:
                 calibration_name = 'default'
             elif device_name not in self.CALIBRATION_PATHS:
-                print('Device "{}" not in CALIBRATION_PATHS; using default.'
-                      .format(device_name))
+                print(f'Device "{device_name}" not in CALIBRATION_PATHS; using default.')
                 calibration_name = 'default'
             else:
                 calibration_name = device_name
 
             calibration_path = self.CALIBRATION_PATHS[calibration_name]
             if not os.path.isfile(calibration_path):
-                raise OSError('Could not find calibration file at: {}'.format(
-                    calibration_path))
+                raise OSError(f'Could not find calibration file at: {calibration_path}')
 
         return cls(
             n_jnt,

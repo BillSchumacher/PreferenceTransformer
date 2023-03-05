@@ -50,6 +50,8 @@ def get_mujoco_py():
 def get_mujoco_py_mjlib():
     """Returns the mujoco_py mjlib module."""
 
+
+
     class MjlibDelegate:
         """Wrapper that forwards mjlib calls."""
 
@@ -58,8 +60,9 @@ def get_mujoco_py_mjlib():
 
         def __getattr__(self, name: str):
             if name.startswith('mj'):
-                return getattr(self._lib, '_' + name)
+                return getattr(self._lib, f'_{name}')
             raise AttributeError(name)
+
 
     return MjlibDelegate(get_mujoco_py().cymj)
 
@@ -122,5 +125,6 @@ def get_dm_render():
 
 def _mj_warning_fn(warn_data: bytes):
     """Warning function override for mujoco_py."""
-    print('WARNING: Mujoco simulation is unstable (has NaNs): {}'.format(
-        warn_data.decode()))
+    print(
+        f'WARNING: Mujoco simulation is unstable (has NaNs): {warn_data.decode()}'
+    )

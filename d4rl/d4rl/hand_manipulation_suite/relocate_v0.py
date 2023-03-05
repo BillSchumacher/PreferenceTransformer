@@ -15,11 +15,11 @@ class RelocateEnvV0(mujoco_env.MujocoEnv, utils.EzPickle, offline_env.OfflineEnv
         self.S_grasp_sid = 0
         self.obj_bid = 0
         curr_dir = os.path.dirname(os.path.abspath(__file__))
-        mujoco_env.MujocoEnv.__init__(self, curr_dir+'/assets/DAPG_relocate.xml', 5)
+        mujoco_env.MujocoEnv.__init__(self, f'{curr_dir}/assets/DAPG_relocate.xml', 5)
 
         # Override action_space to -1, 1
         self.action_space = spaces.Box(low=-1.0, high=1.0, dtype=np.float32, shape=self.action_space.shape)
-        
+
         # change actuator sensitivity
         self.sim.model.actuator_gainprm[self.sim.model.actuator_name2id('A_WRJ1'):self.sim.model.actuator_name2id('A_WRJ0')+1,:3] = np.array([10, 0, 0])
         self.sim.model.actuator_gainprm[self.sim.model.actuator_name2id('A_FFJ3'):self.sim.model.actuator_name2id('A_THJ0')+1,:3] = np.array([1, 0, 0])
@@ -57,7 +57,7 @@ class RelocateEnvV0(mujoco_env.MujocoEnv, utils.EzPickle, offline_env.OfflineEnv
             if np.linalg.norm(obj_pos-target_pos) < 0.05:
                 reward += 20.0                                          # bonus for object "very" close to target
 
-        goal_achieved = True if np.linalg.norm(obj_pos-target_pos) < 0.1 else False
+        goal_achieved = np.linalg.norm(obj_pos-target_pos) < 0.1
 
         return ob, reward, False, dict(goal_achieved=goal_achieved)
 
@@ -116,11 +116,8 @@ class RelocateEnvV0(mujoco_env.MujocoEnv, utils.EzPickle, offline_env.OfflineEnv
         self.viewer.cam.distance = 1.5
 
     def evaluate_success(self, paths):
-        num_success = 0
         num_paths = len(paths)
-        # success if object close to target for 25 steps
-        for path in paths:
-            if np.sum(path['env_infos']['goal_achieved']) > 25:
-                num_success += 1
-        success_percentage = num_success*100.0/num_paths
-        return success_percentage
+        num_success = sum(
+            np.sum(path['env_infos']['goal_achieved']) > 25 for path in paths
+        )
+        return num_success*100.0/num_paths

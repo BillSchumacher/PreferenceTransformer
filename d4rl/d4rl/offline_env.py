@@ -30,8 +30,7 @@ def get_keys(h5file):
 
 def filepath_from_url(dataset_url):
     _, dataset_name = os.path.split(dataset_url)
-    dataset_filepath = os.path.join(DATASET_PATH, dataset_name)
-    return dataset_filepath
+    return os.path.join(DATASET_PATH, dataset_name)
 
 
 def download_dataset_from_url(dataset_url):
@@ -40,7 +39,7 @@ def download_dataset_from_url(dataset_url):
         print('Downloading dataset:', dataset_url, 'to', dataset_filepath)
         urllib.request.urlretrieve(dataset_url, dataset_filepath)
     if not os.path.exists(dataset_filepath):
-        raise IOError("Failed to download dataset from %s" % dataset_url)
+        raise IOError(f"Failed to download dataset from {dataset_url}")
     return dataset_filepath
 
 
@@ -93,23 +92,25 @@ class OfflineEnv(gym.Env):
 
         # Run a few quick sanity checks
         for key in ['observations', 'actions', 'rewards', 'terminals']:
-            assert key in data_dict, 'Dataset is missing key %s' % key
+            assert key in data_dict, f'Dataset is missing key {key}'
         N_samples = data_dict['observations'].shape[0]
         if self.observation_space.shape is not None:
-            assert data_dict['observations'].shape[1:] == self.observation_space.shape, \
-                'Observation shape does not match env: %s vs %s' % (
-                    str(data_dict['observations'].shape[1:]), str(self.observation_space.shape))
-        assert data_dict['actions'].shape[1:] == self.action_space.shape, \
-            'Action shape does not match env: %s vs %s' % (
-                str(data_dict['actions'].shape[1:]), str(self.action_space.shape))
+            assert (
+                data_dict['observations'].shape[1:] == self.observation_space.shape
+            ), f"Observation shape does not match env: {str(data_dict['observations'].shape[1:])} vs {str(self.observation_space.shape)}"
+        assert (
+            data_dict['actions'].shape[1:] == self.action_space.shape
+        ), f"Action shape does not match env: {str(data_dict['actions'].shape[1:])} vs {str(self.action_space.shape)}"
         if data_dict['rewards'].shape == (N_samples, 1):
             data_dict['rewards'] = data_dict['rewards'][:, 0]
-        assert data_dict['rewards'].shape == (N_samples,), 'Reward has wrong shape: %s' % (
-            str(data_dict['rewards'].shape))
+        assert data_dict['rewards'].shape == (
+            N_samples,
+        ), f"Reward has wrong shape: {str(data_dict['rewards'].shape)}"
         if data_dict['terminals'].shape == (N_samples, 1):
             data_dict['terminals'] = data_dict['terminals'][:, 0]
-        assert data_dict['terminals'].shape == (N_samples,), 'Terminals has wrong shape: %s' % (
-            str(data_dict['rewards'].shape))
+        assert data_dict['terminals'].shape == (
+            N_samples,
+        ), f"Terminals has wrong shape: {str(data_dict['rewards'].shape)}"
         return data_dict
 
     def get_dataset_chunk(self, chunk_id, h5path=None):

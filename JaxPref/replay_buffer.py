@@ -17,8 +17,7 @@ class ReplayBuffer(object):
         self._total_steps = 0
 
         if data is not None:
-            if self._max_size < data['observations'].shape[0]:
-                self._max_size = data['observations'].shape[0]
+            self._max_size = max(self._max_size, data['observations'].shape[0])
             self.add_batch(data)
 
     def __len__(self):
@@ -107,10 +106,7 @@ def get_d4rl_dataset(env):
 
 
 def index_batch(batch, indices):
-    indexed = {}
-    for key in batch.keys():
-        indexed[key] = batch[key][indices, ...]
-    return indexed
+    return {key: batch[key][indices, ...] for key in batch.keys()}
 
 
 def parition_batch_train_test(batch, train_ratio):
@@ -126,10 +122,12 @@ def subsample_batch(batch, size):
 
 
 def concatenate_batches(batches):
-    concatenated = {}
-    for key in batches[0].keys():
-        concatenated[key] = np.concatenate([batch[key] for batch in batches], axis=0).astype(np.float32)
-    return concatenated
+    return {
+        key: np.concatenate([batch[key] for batch in batches], axis=0).astype(
+            np.float32
+        )
+        for key in batches[0].keys()
+    }
 
 
 def split_batch(batch, batch_size):

@@ -62,10 +62,7 @@ def flow_register(flow_params, render=None, **kwargs):
         simulator= flow_params['simulator']
     )
 
-    env = offline_env.OfflineEnvWrapper(flow_env,
-        **kwargs
-    )
-    return env
+    return offline_env.OfflineEnvWrapper(flow_env, **kwargs)
 
 
 def ring_env(render='drgb'):
@@ -103,7 +100,7 @@ def ring_env(render='drgb'):
     )
 
 
-    flow_params = dict(
+    return dict(
         exp_tag=name,
         env_name=env_name,
         network=network_name,
@@ -112,9 +109,8 @@ def ring_env(render='drgb'):
         env=env_params,
         net=net_params,
         veh=vehicles,
-        initial=initial_config
+        initial=initial_config,
     )
-    return flow_params
 
 
 RING_RANDOM_SCORE = -165.22

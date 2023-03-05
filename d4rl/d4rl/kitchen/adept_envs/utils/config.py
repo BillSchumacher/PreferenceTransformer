@@ -37,16 +37,15 @@ CONFIG_XML_DATA = """
 def read_config_from_node(root_node, parent_name, child_name, dtype=int):
     # find parent
     parent_node = root_node.find(parent_name)
-    if parent_node == None:
-        quit("Parent %s not found" % parent_name)
+    if parent_node is None:
+        quit(f"Parent {parent_name} not found")
 
     # get child data
     child_data = parent_node.get(child_name)
-    if child_data == None:
-        quit("Child %s not found" % child_name)
+    if child_data is None:
+        quit(f"Child {child_name} not found")
 
-    config_val = np.array(child_data.split(), dtype=dtype)
-    return config_val
+    return np.array(child_data.split(), dtype=dtype)
 
 
 # get config frlom file or string
@@ -64,7 +63,7 @@ def get_config_root_node(config_file_name=None, config_file_data=None):
         root_data = root_node.get('name')
         root_name = np.array(root_data.split(), dtype=str)
     except:
-        quit("ERROR: Unable to process config file %s" % config_file_name)
+        quit(f"ERROR: Unable to process config file {config_file_name}")
 
     return root_node, root_name
 

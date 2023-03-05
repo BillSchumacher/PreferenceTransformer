@@ -43,21 +43,18 @@ def softq_iteration(env, transition_matrix=None, reward_matrix=None, num_itrs=50
         reward_matrix = env.reward_matrix()
     reward_matrix = reward_matrix[:,:,0]
 
-    if warmstart_q is None:
-        q_fn = np.zeros((dim_obs, dim_act))
-    else:
-        q_fn = warmstart_q
-
+    q_fn = np.zeros((dim_obs, dim_act)) if warmstart_q is None else warmstart_q
     if transition_matrix is None:
         t_matrix = env.transition_matrix()
     else:
         t_matrix = transition_matrix
 
-    for k in range(num_itrs):
-        if policy is None:
-            v_fn = logsumexp(q_fn, alpha=ent_wt)
-        else:
-            v_fn = np.sum((q_fn - ent_wt*np.log(policy))*policy, axis=1)
+    for _ in range(num_itrs):
+        v_fn = (
+            logsumexp(q_fn, alpha=ent_wt)
+            if policy is None
+            else np.sum((q_fn - ent_wt * np.log(policy)) * policy, axis=1)
+        )
         new_q = reward_matrix + discount*t_matrix.dot(v_fn)
         q_fn = new_q
     return q_fn

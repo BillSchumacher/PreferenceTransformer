@@ -24,18 +24,13 @@ class MJCFBasedRobot(robot_bases.XmlBasedRobot):
                                         flags=pybullet.URDF_USE_SELF_COLLISION |
                                         pybullet.URDF_USE_SELF_COLLISION_EXCLUDE_ALL_PARENTS |
                                         pybullet.URDF_GOOGLEY_UNDEFINED_COLORS )
-        self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene(
-            self._p, self.objects)
       else:
         self.objects = self._p.loadMJCF(self.model_xml, flags = pybullet.URDF_GOOGLEY_UNDEFINED_COLORS)
-        self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene(
-            self._p, self.objects)
+      self.parts, self.jdict, self.ordered_joints, self.robot_body = self.addToScene(
+          self._p, self.objects)
     self.robot_specific_reset(self._p)
 
-    s = self.calc_state(
-    )  # optimization: calc_state() can calculate something in self.* for calc_potential() to use
-
-    return s
+    return self.calc_state()
 
   def calc_potential(self):
     return 0
@@ -58,7 +53,7 @@ class WalkerBase(MJCFBasedRobot):
       j.reset_current_position(self.np_random.uniform(low=-0.1, high=0.1), 0)
 
     self.feet = [self.parts[f] for f in self.foot_list]
-    self.feet_contact = np.array([0.0 for f in self.foot_list], dtype=np.float32)
+    self.feet_contact = np.array([0.0 for _ in self.foot_list], dtype=np.float32)
     self.scene.actor_introduce(self)
     self.initial_z = None
 
@@ -73,16 +68,19 @@ class WalkerBase(MJCFBasedRobot):
     # even elements [0::2] position, scaled to -1..+1 between limits
     # odd elements  [1::2] angular speed, scaled to show -1..+1
     self.joint_speeds = j[1::2]
-    self.joints_at_limit = np.count_nonzero(np.abs(j[0::2]) > 0.99)
+    self.joints_at_limit = np.count_nonzero(np.abs(j[::2]) > 0.99)
 
     body_pose = self.robot_body.pose()
     parts_xyz = np.array([p.pose().xyz() for p in self.parts.values()]).flatten()
-    self.body_xyz = (parts_xyz[0::3].mean(), parts_xyz[1::3].mean(), body_pose.xyz()[2]
-                    )  # torso z is more informative than mean z
+    self.body_xyz = (
+        parts_xyz[::3].mean(),
+        parts_xyz[1::3].mean(),
+        body_pose.xyz()[2],
+    )
     self.body_real_xyz = body_pose.xyz()
     self.body_rpy = body_pose.rpy()
     z = self.body_xyz[2]
-    if self.initial_z == None:
+    if self.initial_z is None:
       self.initial_z = z
     r, p, yaw = self.body_rpy
     self.walk_target_theta = np.arctan2(self.walk_target_y - self.body_xyz[1],

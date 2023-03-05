@@ -22,10 +22,10 @@ def main():
         pass
 
     ravg = []
-    for n in range(args.num_episodes):
+    for _ in range(args.num_episodes):
         env.reset()
         returns = 0
-        for t in range(env._max_episode_steps):
+        for _ in range(env._max_episode_steps):
             action = env.action_space.sample()
             _, rew, done, info = env.step(action)
             returns += rew

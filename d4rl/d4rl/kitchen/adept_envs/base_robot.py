@@ -145,7 +145,7 @@ class BaseRobot(object):
         """
         if self.pos_bounds is None:
             return positions
-        assert len(positions) == self.n_jnt or len(positions) == self.n_dofs
+        assert len(positions) in [self.n_jnt, self.n_dofs]
         pos_bounds = self.pos_bounds[:len(positions)]
         return np.clip(positions, pos_bounds[:, 0], pos_bounds[:, 1])
 

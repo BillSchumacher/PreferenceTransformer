@@ -13,29 +13,29 @@ LONG_HORIZONS = {'hammer': 600, 'pen': 200, 'relocate': 500, 'door': 300}
 ENV_MAPPING = {'hammer': 'HammerEnvV0', 'relocate': 'RelocateEnvV0', 'door': 'DoorEnvV0', 'pen': 'PenEnvV0'}
 for agent in ['hammer', 'pen', 'relocate', 'door']:
     for dataset in ['human', 'expert', 'cloned']:
-        env_name = '%s-%s-v1' % (agent, dataset)
+        env_name = f'{agent}-{dataset}-v1'
         register(
             id=env_name,
-            entry_point='d4rl.hand_manipulation_suite:' + ENV_MAPPING[agent],
+            entry_point=f'd4rl.hand_manipulation_suite:{ENV_MAPPING[agent]}',
             max_episode_steps=MAX_STEPS[agent],
             kwargs={
                 'ref_min_score': infos.REF_MIN_SCORE[env_name],
                 'ref_max_score': infos.REF_MAX_SCORE[env_name],
-                'dataset_url': infos.DATASET_URLS[env_name]
-            }
+                'dataset_url': infos.DATASET_URLS[env_name],
+            },
         )
 
         if dataset == 'human':
-            longhorizon_env_name = '%s-human-longhorizon-v1' % agent
+            longhorizon_env_name = f'{agent}-human-longhorizon-v1'
             register(
                 id=longhorizon_env_name,
-                entry_point='d4rl.hand_manipulation_suite:' + ENV_MAPPING[agent],
+                entry_point=f'd4rl.hand_manipulation_suite:{ENV_MAPPING[agent]}',
                 max_episode_steps=LONG_HORIZONS[agent],
                 kwargs={
                     'ref_min_score': infos.REF_MIN_SCORE[env_name],
                     'ref_max_score': infos.REF_MAX_SCORE[env_name],
-                    'dataset_url': infos.DATASET_URLS[env_name]
-                }
+                    'dataset_url': infos.DATASET_URLS[env_name],
+                },
             )
 
 DOOR_RANDOM_SCORE = -56.512833

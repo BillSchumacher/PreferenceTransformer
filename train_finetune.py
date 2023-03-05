@@ -115,11 +115,7 @@ def main(_):
             action = np.clip(action, -1, 1)
             next_observation, reward, done, info = env.step(action)
 
-            if not done or 'TimeLimit.truncated' in info:
-                mask = 1.0
-            else:
-                mask = 0.0
-
+            mask = 1.0 if not done or 'TimeLimit.truncated' in info else 0.0
             replay_buffer.insert(observation, action, reward, mask,
                                  float(done), next_observation)
             observation = next_observation
@@ -130,9 +126,7 @@ def main(_):
                     summary_writer.add_scalar(f'training/{k}', v,
                                               info['total']['timesteps'])
         else:
-            info = {}
-            info['total'] = {'timesteps': i}
-
+            info = {'total': {'timesteps': i}}
         batch = replay_buffer.sample(FLAGS.batch_size)
         if 'antmaze' in FLAGS.env_name:
             batch = Batch(observations=batch.observations,

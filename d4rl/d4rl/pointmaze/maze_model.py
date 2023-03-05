@@ -23,10 +23,10 @@ def parse_maze(maze_str):
                 maze_arr[w][h] = WALL
             elif tile == 'G':
                 maze_arr[w][h] = GOAL
-            elif tile == ' ' or tile == 'O' or tile == '0':
+            elif tile in [' ', 'O', '0']:
                 maze_arr[w][h] = EMPTY
             else:
-                raise ValueError('Unknown tile type: %s' % tile)
+                raise ValueError(f'Unknown tile type: {tile}')
     return maze_arr
 
 
@@ -165,9 +165,7 @@ class MazeEnv(mujoco_env.MujocoEnv, utils.EzPickle, offline_env.OfflineEnv):
         self.str_maze_spec = maze_spec
         self.maze_arr = parse_maze(maze_spec)
         self.reward_type = reward_type
-        self.reset_locations = list(zip(*np.where(self.maze_arr == EMPTY)))
-        self.reset_locations.sort()
-
+        self.reset_locations = sorted(zip(*np.where(self.maze_arr == EMPTY)))
         self._target = np.array([0.0,0.0])
 
         model = point_maze(maze_spec)
@@ -194,11 +192,11 @@ class MazeEnv(mujoco_env.MujocoEnv, utils.EzPickle, offline_env.OfflineEnv):
         self.set_marker()
         ob = self._get_obs()
         if self.reward_type == 'sparse':
-            reward = 1.0 if np.linalg.norm(ob[0:2] - self._target) <= 0.5 else 0.0
+            reward = 1.0 if np.linalg.norm(ob[:2] - self._target) <= 0.5 else 0.0
         elif self.reward_type == 'dense':
-            reward = np.exp(-np.linalg.norm(ob[0:2] - self._target))
+            reward = np.exp(-np.linalg.norm(ob[:2] - self._target))
         else:
-            raise ValueError('Unknown reward type %s' % self.reward_type)
+            raise ValueError(f'Unknown reward type {self.reward_type}')
         done = False
         return ob, reward, done, {}
 

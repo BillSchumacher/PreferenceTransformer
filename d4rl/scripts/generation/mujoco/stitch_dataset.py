@@ -16,15 +16,13 @@ if __name__ == "__main__":
 
     keys = ['observations', 'next_observations', 'actions', 'rewards', 'terminals', 'timeouts', 'infos/action_log_probs', 'infos/qpos', 'infos/qvel']
     # be careful with trajectories not ending at the end of a file!
-    
+
     # find end of last traj
     terms = hfile1['terminals'][:]
     tos = hfile1['timeouts'][:]
-    last_term = 0
-    for i in range(terms.shape[0]-1, -1, -1):
-        if terms[i] or tos[i]:
-            last_term = i
-            break
+    last_term = next(
+        (i for i in range(terms.shape[0] - 1, -1, -1) if terms[i] or tos[i]), 0
+    )
     N = last_term + 1
 
     for k in keys:

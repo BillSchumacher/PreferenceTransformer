@@ -47,10 +47,7 @@ class MR(object):
         self._total_steps = 0
         
     def evaluation(self, batch):
-        metrics = self._eval_pref_step(
-            self._train_states, next_rng(), batch
-        )
-        return metrics
+        return self._eval_pref_step(self._train_states, next_rng(), batch)
 
     def get_reward(self, batch):
         return self._get_reward_step(self._train_states, batch)
@@ -63,8 +60,7 @@ class MR(object):
         # in_obs = jnp.concatenate([obs, n_obs], axis=-1)
         in_obs = obs
         train_params = {key: train_states[key].params for key in self.model_keys}
-        rf_pred = self.rf.apply(train_params['rf'], in_obs, act)
-        return rf_pred
+        return self.rf.apply(train_params['rf'], in_obs, act)
     
     @partial(jax.jit, static_argnames=('self'))
     def _eval_pref_step(self, train_states, rng, batch):

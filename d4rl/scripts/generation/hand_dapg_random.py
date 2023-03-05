@@ -37,8 +37,8 @@ def pol_playback(env_name, num_trajs=100):
     info_env_state_ = []
 
     ravg = []
-    
-    for n in range(num_trajs):
+
+    for _ in range(num_trajs):
         e.reset()
         returns = 0
         for t in range(e._horizon):
@@ -79,7 +79,7 @@ def pol_playback(env_name, num_trajs=100):
     info_qpos_ = np.array(info_qpos_).astype(np.float32)
     info_qvel_ = np.array(info_qvel_).astype(np.float32)
 
-    dataset = h5py.File('%s_random.hdf5' % env_name, 'w')
+    dataset = h5py.File(f'{env_name}_random.hdf5', 'w')
 
     #dataset.create_dataset('observations', obs_.shape, dtype='f4')
     dataset.create_dataset('observations', data=obs_, compression='gzip')

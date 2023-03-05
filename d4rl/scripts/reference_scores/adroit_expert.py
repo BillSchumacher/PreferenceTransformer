@@ -19,17 +19,17 @@ def main():
     parser.add_argument('--num_episodes', type=int, default=100)
     args = parser.parse_args()
 
-    policy = './policies/'+args.env_name+'.pickle'
+    policy = f'./policies/{args.env_name}.pickle'
     pi = pickle.load(open(policy, 'rb'))
     e = gym.make(args.env_name)
     e.seed(0)
     e.reset()
 
     ravg = []
-    for n in range(args.num_episodes):
+    for _ in range(args.num_episodes):
         e.reset()
         returns = 0
-        for t in range(e._max_episode_steps):
+        for _ in range(e._max_episode_steps):
             obs = e.get_obs()
             action, infos = pi.get_action(obs)
             action = pi.get_action(obs)[0] # eval
@@ -37,8 +37,6 @@ def main():
             returns += rew
             if done:
                 break
-            # e.env.mj_render() # this is much faster
-            # e.render()
         ravg.append(returns)
     print(args.env_name, 'returns', np.mean(ravg))
 

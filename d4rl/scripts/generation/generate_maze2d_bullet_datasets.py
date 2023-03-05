@@ -36,11 +36,7 @@ def append_data(data, s, a, tgt, done, timeout, robot):
 
 def npify(data):
     for k in data:
-        if k == 'terminals' or k == 'timeouts':
-            dtype = np.bool_
-        else:
-            dtype = np.float32
-
+        dtype = np.bool_ if k in ['terminals', 'timeouts'] else np.float32
         data[k] = np.array(data[k], dtype=dtype)
 
 def main():
@@ -67,10 +63,10 @@ def main():
     timeout = False
 
     data = reset_data()
-    last_position = s[0:2]
+    last_position = s[:2]
     ts = 0
     for _ in range(args.num_samples):
-        position = s[0:2]
+        position = s[:2]
         velocity = s[2:4]
 
         # subtract 1.0 due to offset between tabular maze representation and bullet state
@@ -94,17 +90,17 @@ def main():
             done = False
             ts = 0
         else:
-            last_position = s[0:2]
+            last_position = s[:2]
             s = ns
 
         if args.render:
             env.render('human')
 
-    
+
     if args.noisy:
-        fname = '%s-noisy-bullet.hdf5' % args.env_name
+        fname = f'{args.env_name}-noisy-bullet.hdf5'
     else:
-        fname = '%s-bullet.hdf5' % args.env_name
+        fname = f'{args.env_name}-bullet.hdf5'
     dataset = h5py.File(fname, 'w')
     npify(data)
     for k in data:

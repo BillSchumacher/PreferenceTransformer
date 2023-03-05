@@ -53,10 +53,7 @@ def viewer(env,
             skvideo.io.vwrite(filename, np.asarray(render_buffer))
             print("\noffscreen buffer saved", filename)
 
-    elif render == 'None':
-        pass
-
-    else:
+    elif render != 'None':
         print("unknown render: ", render)
 
 
@@ -168,24 +165,24 @@ def main(env, demo_dir, skip, graph, save_logs, view, render):
 
     gym_env = gym.make(env)
     paths = []
-    print("Scanning demo_dir: " + demo_dir + "=========")
-    for ind, file in enumerate(glob.glob(demo_dir + "*.mjl")):
+    print(f"Scanning demo_dir: {demo_dir}=========")
+    for ind, file in enumerate(glob.glob(f"{demo_dir}*.mjl")):
 
         # process logs
-        print("processing: " + file, end=': ')
+        print(f"processing: {file}", end=': ')
 
         data = parse_mjl_logs(file, skip)
 
         print("log duration %0.2f" % (data['time'][-1] - data['time'][0]))
 
         # plot logs
-        if (graph):
-            print("plotting: " + file)
+        if graph:
+            print(f"plotting: {file}")
             viz_parsed_mjl_logs(data)
 
         # save logs
-        if (save_logs):
-            pickle.dump(data, open(file[:-4] + ".pkl", 'wb'))
+        if save_logs:
+            pickle.dump(data, open(f"{file[:-4]}.pkl", 'wb'))
 
         # render logs to video
         if view == 'render':

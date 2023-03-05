@@ -52,20 +52,12 @@ class Robot(base_robot.BaseRobot):
 
             if franka_interface is '':
                 raise NotImplementedError()
-                from handware.franka import franka
+            self.franka_interface = franka_interface
+            cprint("Reusing previours Franka session", 'white', 'on_grey')
 
-                # initialize franka
-                self.franka_interface = franka()
-                franka_interface = self.franka_interface
-                cprint("Initializing %s Hardware (Status:%d)" % (self.robot_name, self.franka.okay(self.robot_hardware_dof)), 'white', 'on_grey')
-            else:
-                self.franka_interface = franka_interface
-                cprint("Reusing previours Franka session", 'white', 'on_grey')
-
-        # Robot: Simulation
         else:
             self.robot_name = "Franka"
-            cprint("Initializing %s sim" % self.robot_name, 'white', 'on_grey')
+            cprint(f"Initializing {self.robot_name} sim", 'white', 'on_grey')
 
         # Robot's time
         self.time_start = time.time()
@@ -87,17 +79,33 @@ class Robot(base_robot.BaseRobot):
         self.robot_pos_noise_amp = np.zeros(self.n_dofs, dtype=float)
         self.robot_vel_noise_amp = np.zeros(self.n_dofs, dtype=float)
 
-        print("Reading configurations for %s" % self.robot_name)
+        print(f"Reading configurations for {self.robot_name}")
         for i in range(self.n_dofs):
-            self.robot_mode[i] = read_config_from_node(root, "qpos"+str(i), "mode", int)
-            self.robot_mj_dof[i] = read_config_from_node(root, "qpos"+str(i), "mj_dof", int)
-            self.robot_hardware_dof[i] = read_config_from_node(root, "qpos"+str(i), "hardware_dof", int)
-            self.robot_scale[i] = read_config_from_node(root, "qpos"+str(i), "scale", float)
-            self.robot_offset[i] = read_config_from_node(root, "qpos"+str(i), "offset", float)
-            self.robot_pos_bound[i] = read_config_from_node(root, "qpos"+str(i), "pos_bound", float)
-            self.robot_vel_bound[i] = read_config_from_node(root, "qpos"+str(i), "vel_bound", float)
-            self.robot_pos_noise_amp[i] = read_config_from_node(root, "qpos"+str(i), "pos_noise_amp", float)
-            self.robot_vel_noise_amp[i] = read_config_from_node(root, "qpos"+str(i), "vel_noise_amp", float)
+            self.robot_mode[i] = read_config_from_node(root, f"qpos{str(i)}", "mode", int)
+            self.robot_mj_dof[i] = read_config_from_node(
+                root, f"qpos{str(i)}", "mj_dof", int
+            )
+            self.robot_hardware_dof[i] = read_config_from_node(
+                root, f"qpos{str(i)}", "hardware_dof", int
+            )
+            self.robot_scale[i] = read_config_from_node(
+                root, f"qpos{str(i)}", "scale", float
+            )
+            self.robot_offset[i] = read_config_from_node(
+                root, f"qpos{str(i)}", "offset", float
+            )
+            self.robot_pos_bound[i] = read_config_from_node(
+                root, f"qpos{str(i)}", "pos_bound", float
+            )
+            self.robot_vel_bound[i] = read_config_from_node(
+                root, f"qpos{str(i)}", "vel_bound", float
+            )
+            self.robot_pos_noise_amp[i] = read_config_from_node(
+                root, f"qpos{str(i)}", "pos_noise_amp", float
+            )
+            self.robot_vel_noise_amp[i] = read_config_from_node(
+                root, f"qpos{str(i)}", "vel_noise_amp", float
+            )
 
 
     # convert to hardware space
@@ -138,25 +146,24 @@ class Robot(base_robot.BaseRobot):
         if self.is_hardware:
             raise NotImplementedError()
 
+        #Gather simulated observation
+        qp = env.sim.data.qpos[:self.n_jnt].copy()
+        qv = env.sim.data.qvel[:self.n_jnt].copy()
+        if self.has_obj:
+            qp_obj = env.sim.data.qpos[-self.n_obj:].copy()
+            qv_obj = env.sim.data.qvel[-self.n_obj:].copy()
         else:
-            #Gather simulated observation
-            qp = env.sim.data.qpos[:self.n_jnt].copy()
-            qv = env.sim.data.qvel[:self.n_jnt].copy()
-            if self.has_obj:
-                qp_obj = env.sim.data.qpos[-self.n_obj:].copy()
-                qv_obj = env.sim.data.qvel[-self.n_obj:].copy()
-            else:
-                qp_obj = None
-                qv_obj = None
-            self.time = env.sim.data.time
+            qp_obj = None
+            qv_obj = None
+        self.time = env.sim.data.time
 
-            # Simulate observation noise
-            if not env.initializing:
-                qp += robot_noise_ratio*self.robot_pos_noise_amp[:self.n_jnt]*env.np_random.uniform(low=-1., high=1., size=self.n_jnt)
-                qv += robot_noise_ratio*self.robot_vel_noise_amp[:self.n_jnt]*env.np_random.uniform(low=-1., high=1., size=self.n_jnt)
-                if self.has_obj:
-                    qp_obj += robot_noise_ratio*self.robot_pos_noise_amp[-self.n_obj:]*env.np_random.uniform(low=-1., high=1., size=self.n_obj)
-                    qv_obj += robot_noise_ratio*self.robot_vel_noise_amp[-self.n_obj:]*env.np_random.uniform(low=-1., high=1., size=self.n_obj)
+        # Simulate observation noise
+        if not env.initializing:
+            qp += robot_noise_ratio*self.robot_pos_noise_amp[:self.n_jnt]*env.np_random.uniform(low=-1., high=1., size=self.n_jnt)
+            qv += robot_noise_ratio*self.robot_vel_noise_amp[:self.n_jnt]*env.np_random.uniform(low=-1., high=1., size=self.n_jnt)
+            if self.has_obj:
+                qp_obj += robot_noise_ratio*self.robot_pos_noise_amp[-self.n_obj:]*env.np_random.uniform(low=-1., high=1., size=self.n_obj)
+                qv_obj += robot_noise_ratio*self.robot_vel_noise_amp[-self.n_obj:]*env.np_random.uniform(low=-1., high=1., size=self.n_obj)
 
         # cache observations
         obs = observation(time=self.time, qpos_robot=qp, qvel_robot=qv, qpos_object=qp_obj, qvel_object=qv_obj)
@@ -170,8 +177,11 @@ class Robot(base_robot.BaseRobot):
 
     # enforce position specs.
     def ctrl_position_limits(self, ctrl_position):
-        ctrl_feasible_position = np.clip(ctrl_position, self.robot_pos_bound[:self.n_jnt, 0], self.robot_pos_bound[:self.n_jnt, 1])
-        return ctrl_feasible_position
+        return np.clip(
+            ctrl_position,
+            self.robot_pos_bound[: self.n_jnt, 0],
+            self.robot_pos_bound[: self.n_jnt, 1],
+        )
 
 
     # step the robot env
@@ -212,14 +222,13 @@ class Robot(base_robot.BaseRobot):
 
         if self.is_hardware:
             raise NotImplementedError()
-        else:
-            env.sim.reset()
-            env.sim.data.qpos[:self.n_jnt] = reset_pose[:self.n_jnt].copy()
-            env.sim.data.qvel[:self.n_jnt] = reset_vel[:self.n_jnt].copy()
-            if self.has_obj:
-                env.sim.data.qpos[-self.n_obj:] = reset_pose[-self.n_obj:].copy()
-                env.sim.data.qvel[-self.n_obj:] = reset_vel[-self.n_obj:].copy()
-            env.sim.forward()
+        env.sim.reset()
+        env.sim.data.qpos[:self.n_jnt] = reset_pose[:self.n_jnt].copy()
+        env.sim.data.qvel[:self.n_jnt] = reset_vel[:self.n_jnt].copy()
+        if self.has_obj:
+            env.sim.data.qpos[-self.n_obj:] = reset_pose[-self.n_obj:].copy()
+            env.sim.data.qvel[-self.n_obj:] = reset_vel[-self.n_obj:].copy()
+        env.sim.forward()
 
         if self.overlay:
             env.sim.data.qpos[self.n_jnt:2*self.n_jnt] = env.desired_pose[:self.n_jnt].copy()
@@ -234,7 +243,6 @@ class Robot(base_robot.BaseRobot):
             cprint("Closing Franka hardware... ", 'white', 'on_grey', end='', flush=True)
             status = 0
             raise NotImplementedError()
-            cprint("Closed (Status: {})".format(status), 'white', 'on_grey', flush=True)
         else:
             cprint("Closing Franka sim", 'white', 'on_grey', flush=True)
 
@@ -248,8 +256,7 @@ class Robot_PosAct(Robot):
         ctrl_desired_vel = (ctrl_position-last_obs.qpos_robot[:self.n_jnt])/step_duration
 
         ctrl_feasible_vel = np.clip(ctrl_desired_vel, self.robot_vel_bound[:self.n_jnt, 0], self.robot_vel_bound[:self.n_jnt, 1])
-        ctrl_feasible_position = last_obs.qpos_robot[:self.n_jnt] + ctrl_feasible_vel*step_duration
-        return ctrl_feasible_position
+        return last_obs.qpos_robot[:self.n_jnt] + ctrl_feasible_vel*step_duration
 
 
 class Robot_VelAct(Robot):
@@ -260,6 +267,5 @@ class Robot_VelAct(Robot):
         last_obs = self.observation_cache[-1]
 
         ctrl_feasible_vel = np.clip(ctrl_velocity, self.robot_vel_bound[:self.n_jnt, 0], self.robot_vel_bound[:self.n_jnt, 1])
-        ctrl_feasible_position = last_obs.qpos_robot[:self.n_jnt] + ctrl_feasible_vel*step_duration
-        return ctrl_feasible_position
+        return last_obs.qpos_robot[:self.n_jnt] + ctrl_feasible_vel*step_duration
 

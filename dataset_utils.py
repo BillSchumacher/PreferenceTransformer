@@ -268,9 +268,7 @@ def reward_from_preference_transformer(
         _obs, _act = np.asarray(_obs), np.asarray(_act)
         trajectories.append((_obs, _act))
 
-        for seg_idx in range(traj_len):
-            trj_mapper.append((trj_idx, seg_idx))
-
+        trj_mapper.extend((trj_idx, seg_idx) for seg_idx in range(traj_len))
     data_size = dataset.rewards.shape[0]
     interval = int(data_size / batch_size) + 1
     new_r = np.zeros_like(dataset.rewards)
@@ -336,25 +334,22 @@ def reward_from_preference_transformer(
             jax_prev_input = batch_to_jax(prev_input)
             prev_reward, _ = reward_model.get_reward(jax_prev_input)
             prev_reward = prev_reward.reshape(end_pt - start_pt, seq_len - 1) * prev_input["attn_mask"]
-            if label_mode == "mean":
-                new_reward = jnp.sum(new_reward, axis=1).reshape(-1, 1)
-                prev_reward = jnp.sum(prev_reward, axis=1).reshape(-1, 1)
-            elif label_mode == "last":
+            if label_mode == "last":
                 new_reward = new_reward[:, -1].reshape(-1, 1)
                 prev_reward = prev_reward[:, -1].reshape(-1, 1)
+            elif label_mode == "mean":
+                new_reward = jnp.sum(new_reward, axis=1).reshape(-1, 1)
+                prev_reward = jnp.sum(prev_reward, axis=1).reshape(-1, 1)
             new_reward -= prev_reward
-        else:
-            if label_mode == "mean":
-                new_reward = jnp.sum(new_reward, axis=1) / jnp.sum(_input_attn_mask, axis=1)
-                new_reward = new_reward.reshape(-1, 1)
-            elif label_mode == "last":
-                new_reward = new_reward[:, -1].reshape(-1, 1)
+        elif label_mode == "last":
+            new_reward = new_reward[:, -1].reshape(-1, 1)
 
+        elif label_mode == "mean":
+            new_reward = jnp.sum(new_reward, axis=1) / jnp.sum(_input_attn_mask, axis=1)
+            new_reward = new_reward.reshape(-1, 1)
         new_reward = np.asarray(list(new_reward))
         new_r[start_pt:end_pt, ...] = new_reward.squeeze(-1)
 
     dataset.rewards = new_r.copy()
 
-    if with_attn_weights:
-        return dataset, (attn_weights, pts)
-    return dataset
+    return (dataset, (attn_weights, pts)) if with_attn_weights else dataset

@@ -73,7 +73,7 @@ class WaypointController(object):
         max_ts = 100
         s = start_idx
         waypoints = []
-        for i in range(max_ts):
+        for _ in range(max_ts):
             a = np.argmax(q_values[s])
             new_s, reward = self.env.step_stateless(s, a)
 
@@ -104,6 +104,6 @@ if __name__ == "__main__":
     act, done = controller.get_action(start, target)
     print('wpt:', controller._waypoints)
     print(act, done)
-    import pdb; pdb.set_trace()
-    pass
+    import pdb
+    pdb.set_trace()
 

@@ -50,10 +50,7 @@ class PointEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     # Check mujoco version is greater than version 1.50 to call correct physics
     # model containing PyMjData object for getting and setting position/velocity.
     # Check https://github.com/openai/mujoco-py/issues/80 for updates to api.
-    if mujoco_py.get_version() >= '1.50':
-      return self.sim
-    else:
-      return self.model
+    return self.sim if mujoco_py.get_version() >= '1.50' else self.model
 
   def _step(self, a):
     return self.step(a)
@@ -71,7 +68,7 @@ class PointEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     qpos[1] = np.clip(qpos[1] + dy, -100, 100)
     qvel = self.physics.data.qvel
     self.set_state(qpos, qvel)
-    for _ in range(0, self.frame_skip):
+    for _ in range(self.frame_skip):
       self.physics.step()
     next_obs = self._get_obs()
     reward = 0

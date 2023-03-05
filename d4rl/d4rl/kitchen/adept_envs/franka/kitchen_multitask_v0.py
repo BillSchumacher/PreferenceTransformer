@@ -119,13 +119,14 @@ class KitchenV0(robot_env.RobotEnv):
         t, qp, qv, obj_qp, obj_qv = self.robot.get_obs(
             self, robot_noise_ratio=self.robot_noise_ratio)
 
-        self.obs_dict = {}
-        self.obs_dict['t'] = t
-        self.obs_dict['qp'] = qp
-        self.obs_dict['qv'] = qv
-        self.obs_dict['obj_qp'] = obj_qp
-        self.obs_dict['obj_qv'] = obj_qv
-        self.obs_dict['goal'] = self.goal
+        self.obs_dict = {
+            't': t,
+            'qp': qp,
+            'qv': qv,
+            'obj_qp': obj_qp,
+            'obj_qv': obj_qv,
+            'goal': self.goal,
+        }
         if self.goal_concat:
             return np.concatenate([self.obs_dict['qp'], self.obs_dict['obj_qp'], self.obs_dict['goal']])
 
@@ -144,11 +145,10 @@ class KitchenV0(robot_env.RobotEnv):
             mean_score_per_rollout[idx] = np.mean(path['env_infos']['score'])
         mean_score = np.mean(mean_score_per_rollout)
 
-        # success percentage
-        num_success = 0
         num_paths = len(paths)
-        for path in paths:
-            num_success += bool(path['env_infos']['rewards']['bonus'][-1])
+        num_success = sum(
+            bool(path['env_infos']['rewards']['bonus'][-1]) for path in paths
+        )
         success_percentage = num_success * 100.0 / num_paths
 
         # fuse results
@@ -181,10 +181,7 @@ class KitchenTaskRelaxV1(KitchenV0):
         super(KitchenTaskRelaxV1, self).__init__()
 
     def _get_reward_n_score(self, obs_dict):
-        reward_dict = {}
-        reward_dict['true_reward'] = 0.
-        reward_dict['bonus'] = 0.
-        reward_dict['r_total'] = 0.
+        reward_dict = {'true_reward': 0.0, 'bonus': 0.0, 'r_total': 0.0}
         score = 0.
         return reward_dict, score
 
@@ -192,7 +189,6 @@ class KitchenTaskRelaxV1(KitchenV0):
         if mode =='rgb_array':
             camera = engine.MovableCamera(self.sim, 1920, 2560)
             camera.set_pose(distance=2.2, lookat=[-0.2, .5, 2.], azimuth=70, elevation=-35)
-            img = camera.render()
-            return img
+            return camera.render()
         else:
             super(KitchenTaskRelaxV1, self).render()

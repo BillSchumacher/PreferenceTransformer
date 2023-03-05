@@ -30,6 +30,4 @@ def one_hot_to_flat(val):
     array([2, 0, 1])
     """
     idxs = np.array(np.where(val == 1.0))[-1]
-    if len(val.shape) == 1:
-        return int(idxs)
-    return idxs
+    return int(idxs) if len(val.shape) == 1 else idxs

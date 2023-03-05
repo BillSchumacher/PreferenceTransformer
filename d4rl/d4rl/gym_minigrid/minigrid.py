@@ -119,31 +119,31 @@ class WorldObj:
         obj_type = IDX_TO_OBJECT[type_idx]
         color = IDX_TO_COLOR[color_idx]
 
-        if obj_type == 'empty' or obj_type == 'unseen':
+        if obj_type in ['empty', 'unseen']:
             return None
 
         # State, 0: open, 1: closed, 2: locked
         is_open = state == 0
         is_locked = state == 2
 
-        if obj_type == 'wall':
-            v = Wall(color)
-        elif obj_type == 'floor':
-            v = Floor(color)
-        elif obj_type == 'ball':
+        if obj_type == 'ball':
             v = Ball(color)
-        elif obj_type == 'key':
-            v = Key(color)
         elif obj_type == 'box':
             v = Box(color)
         elif obj_type == 'door':
             v = Door(color, is_open, is_locked)
+        elif obj_type == 'floor':
+            v = Floor(color)
         elif obj_type == 'goal':
             v = Goal()
+        elif obj_type == 'key':
+            v = Key(color)
         elif obj_type == 'lava':
             v = Lava()
+        elif obj_type == 'wall':
+            v = Wall(color)
         else:
-            assert False, "unknown object type in decode '%s'" % objType
+            assert False, f"unknown object type in decode '{objType}'"
 
         return v
 
@@ -249,7 +249,7 @@ class Door(WorldObj):
             state = 0
         elif self.is_locked:
             state = 2
-        elif not self.is_open:
+        else:
             state = 1
 
         return (OBJECT_TO_IDX[self.type], COLOR_TO_IDX[self.color], state)
@@ -350,12 +350,11 @@ class Grid:
         self.grid = [None] * width * height
 
     def __contains__(self, key):
-        if isinstance(key, WorldObj):
-            for e in self.grid:
+        for e in self.grid:
+            if isinstance(key, WorldObj):
                 if e is key:
                     return True
-        elif isinstance(key, tuple):
-            for e in self.grid:
+            elif isinstance(key, tuple):
                 if e is None:
                     continue
                 if (e.color, e.type) == key:
@@ -389,13 +388,13 @@ class Grid:
     def horz_wall(self, x, y, length=None, obj_type=Wall):
         if length is None:
             length = self.width - x
-        for i in range(0, length):
+        for i in range(length):
             self.set(x + i, y, obj_type())
 
     def vert_wall(self, x, y, length=None, obj_type=Wall):
         if length is None:
             length = self.height - y
-        for j in range(0, length):
+        for j in range(length):
             self.set(x, y + j, obj_type())
 
     def wall_rect(self, x, y, w, h):
@@ -425,13 +424,13 @@ class Grid:
 
         grid = Grid(width, height)
 
-        for j in range(0, height):
-            for i in range(0, width):
+        for j in range(height):
+            for i in range(width):
                 x = topX + i
                 y = topY + j
 
                 if x >= 0 and x < self.width and \
-                   y >= 0 and y < self.height:
+                       y >= 0 and y < self.height:
                     v = self.get(x, y)
                 else:
                     v = Wall()
@@ -516,8 +515,8 @@ class Grid:
         img = np.zeros(shape=(height_px, width_px, 3), dtype=np.uint8)
 
         # Render the grid
-        for j in range(0, self.height):
-            for i in range(0, self.width):
+        for j in range(self.height):
+            for i in range(self.width):
                 cell = self.get(i, j)
 
                 agent_here = np.array_equal(agent_pos, (i, j))
@@ -582,17 +581,17 @@ class Grid:
 
         return grid, vis_mask
 
-    def process_vis(grid, agent_pos):
-        mask = np.zeros(shape=(grid.width, grid.height), dtype=np.bool)
+    def process_vis(self, agent_pos):
+        mask = np.zeros(shape=(self.width, self.height), dtype=np.bool)
 
         mask[agent_pos[0], agent_pos[1]] = True
 
-        for j in reversed(range(0, grid.height)):
-            for i in range(0, grid.width-1):
+        for j in reversed(range(self.height)):
+            for i in range(self.width - 1):
                 if not mask[i, j]:
                     continue
 
-                cell = grid.get(i, j)
+                cell = self.get(i, j)
                 if cell and not cell.see_behind():
                     continue
 
@@ -601,11 +600,11 @@ class Grid:
                     mask[i+1, j-1] = True
                     mask[i, j-1] = True
 
-            for i in reversed(range(1, grid.width)):
+            for i in reversed(range(1, self.width)):
                 if not mask[i, j]:
                     continue
 
-                cell = grid.get(i, j)
+                cell = self.get(i, j)
                 if cell and not cell.see_behind():
                     continue
 
@@ -614,10 +613,10 @@ class Grid:
                     mask[i-1, j-1] = True
                     mask[i, j-1] = True
 
-        for j in range(0, grid.height):
-            for i in range(0, grid.width):
+        for j in range(self.height):
+            for i in range(self.width):
                 if not mask[i, j]:
-                    grid.set(i, j, None)
+                    self.set(i, j, None)
 
         return mask
 
@@ -662,7 +661,7 @@ class MiniGridEnv(offline_env.OfflineEnv):
         offline_env.OfflineEnv.__init__(self, **kwargs)
         # Can't set both grid_size and width/height
         if grid_size:
-            assert width == None and height == None
+            assert width is None and height is None
             width = grid_size
             height = grid_size
 
@@ -733,9 +732,7 @@ class MiniGridEnv(offline_env.OfflineEnv):
         # Step count since episode start
         self.step_count = 0
 
-        # Return first observation
-        obs = self.gen_obs()
-        return obs
+        return self.gen_obs()
 
     def seed(self, seed=1337):
         # Seed the random number generator
@@ -787,7 +784,7 @@ class MiniGridEnv(offline_env.OfflineEnv):
 
                 c = self.grid.get(i, j)
 
-                if c == None:
+                if c is None:
                     str += '  '
                     continue
 
@@ -795,9 +792,9 @@ class MiniGridEnv(offline_env.OfflineEnv):
                     if c.is_open:
                         str += '__'
                     elif c.is_locked:
-                        str += 'L' + c.color[0].upper()
+                        str += f'L{c.color[0].upper()}'
                     else:
-                        str += 'D' + c.color[0].upper()
+                        str += f'D{c.color[0].upper()}'
                     continue
 
                 str += OBJECT_TO_STR[c.type] + c.color[0].upper()
@@ -896,11 +893,7 @@ class MiniGridEnv(offline_env.OfflineEnv):
         :param reject_fn: function to filter out potential positions
         """
 
-        if top is None:
-            top = (0, 0)
-        else:
-            top = (max(top[0], 0), max(top[1], 0))
-
+        top = (0, 0) if top is None else (max(top[0], 0), max(top[1], 0))
         if size is None:
             size = (self.grid.width, self.grid.height)
 
@@ -1108,13 +1101,11 @@ class MiniGridEnv(offline_env.OfflineEnv):
             if self.agent_dir < 0:
                 self.agent_dir += 4
 
-        # Rotate right
         elif action == self.actions.right:
             self.agent_dir = (self.agent_dir + 1) % 4
 
-        # Move forward
         elif action == self.actions.forward:
-            if fwd_cell == None or fwd_cell.can_overlap():
+            if fwd_cell is None or fwd_cell.can_overlap():
                 self.agent_pos = fwd_pos
             if fwd_cell != None and fwd_cell.type == 'goal':
                 done = True
@@ -1122,31 +1113,23 @@ class MiniGridEnv(offline_env.OfflineEnv):
             if fwd_cell != None and fwd_cell.type == 'lava':
                 done = True
 
-        # Pick up an object
         elif action == self.actions.pickup:
-            if fwd_cell and fwd_cell.can_pickup():
-                if self.carrying is None:
-                    self.carrying = fwd_cell
-                    self.carrying.cur_pos = np.array([-1, -1])
-                    self.grid.set(*fwd_pos, None)
+            if fwd_cell and fwd_cell.can_pickup() and self.carrying is None:
+                self.carrying = fwd_cell
+                self.carrying.cur_pos = np.array([-1, -1])
+                self.grid.set(*fwd_pos, None)
 
-        # Drop an object
         elif action == self.actions.drop:
             if not fwd_cell and self.carrying:
                 self.grid.set(*fwd_pos, self.carrying)
                 self.carrying.cur_pos = fwd_pos
                 self.carrying = None
 
-        # Toggle/activate an object
         elif action == self.actions.toggle:
             if fwd_cell:
                 fwd_cell.toggle(self, fwd_pos)
 
-        # Done action (not used by default)
-        elif action == self.actions.done:
-            pass
-
-        else:
+        elif action != self.actions.done:
             assert False, "unknown action"
 
         if self.step_count >= self.max_steps:
@@ -1167,16 +1150,18 @@ class MiniGridEnv(offline_env.OfflineEnv):
 
         grid = self.grid.slice(topX, topY, self.agent_view_size, self.agent_view_size)
 
-        for i in range(self.agent_dir + 1):
+        for _ in range(self.agent_dir + 1):
             grid = grid.rotate_left()
 
         # Process occluders and visibility
         # Note that this incurs some performance cost
-        if not self.see_through_walls:
-            vis_mask = grid.process_vis(agent_pos=(self.agent_view_size // 2 , self.agent_view_size - 1))
-        else:
-            vis_mask = np.ones(shape=(grid.width, grid.height), dtype=np.bool)
-
+        vis_mask = (
+            np.ones(shape=(grid.width, grid.height), dtype=np.bool)
+            if self.see_through_walls
+            else grid.process_vis(
+                agent_pos=(self.agent_view_size // 2, self.agent_view_size - 1)
+            )
+        )
         # Make it so the agent sees what it's carrying
         # We do this by placing the carried object at the agent's position
         # in the agent's partially observable view
@@ -1200,17 +1185,11 @@ class MiniGridEnv(offline_env.OfflineEnv):
 
         assert hasattr(self, 'mission'), "environments must define a textual mission string"
 
-        # Observations are dictionaries containing:
-        # - an image (partially observable view of the environment)
-        # - the agent's direction/orientation (acting as a compass)
-        # - a textual mission string (instructions for the agent)
-        obs = {
+        return {
             'image': image,
             'direction': self.agent_dir,
-            'mission': self.mission
+            'mission': self.mission,
         }
-
-        return obs
 
     def get_obs_render(self, obs, tile_size=TILE_PIXELS//2):
         """
@@ -1219,15 +1198,12 @@ class MiniGridEnv(offline_env.OfflineEnv):
 
         grid, vis_mask = Grid.decode(obs)
 
-        # Render the whole grid
-        img = grid.render(
+        return grid.render(
             tile_size,
             agent_pos=(self.agent_view_size // 2, self.agent_view_size - 1),
             agent_dir=3,
-            highlight_mask=vis_mask
+            highlight_mask=vis_mask,
         )
-
-        return img
 
     def render(self, mode='human', close=False, highlight=True, tile_size=TILE_PIXELS):
         """
@@ -1257,8 +1233,8 @@ class MiniGridEnv(offline_env.OfflineEnv):
         highlight_mask = np.zeros(shape=(self.width, self.height), dtype=np.bool)
 
         # For each cell in the visibility mask
-        for vis_j in range(0, self.agent_view_size):
-            for vis_i in range(0, self.agent_view_size):
+        for vis_j in range(self.agent_view_size):
+            for vis_i in range(self.agent_view_size):
                 # If this cell is not visible, don't highlight it
                 if not vis_mask[vis_i, vis_j]:
                     continue

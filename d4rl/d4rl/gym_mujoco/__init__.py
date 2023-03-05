@@ -6,17 +6,17 @@ from d4rl import infos
 for agent in ['hopper', 'halfcheetah', 'ant', 'walker2d']:
     for dataset in ['random', 'medium', 'expert', 'medium-expert', 'medium-replay', 'full-replay']:
         for version in ['v1', 'v2']:
-            env_name = '%s-%s-%s' % (agent, dataset, version)
+            env_name = f'{agent}-{dataset}-{version}'
             register(
                 id=env_name,
-                entry_point='d4rl.gym_mujoco.gym_envs:get_%s_env' % agent.replace('halfcheetah', 'cheetah').replace('walker2d', 'walker'),
+                entry_point=f"d4rl.gym_mujoco.gym_envs:get_{agent.replace('halfcheetah', 'cheetah').replace('walker2d', 'walker')}_env",
                 max_episode_steps=1000,
                 kwargs={
                     'deprecated': version != 'v2',
                     'ref_min_score': infos.REF_MIN_SCORE[env_name],
                     'ref_max_score': infos.REF_MAX_SCORE[env_name],
-                    'dataset_url': infos.DATASET_URLS[env_name]
-                }
+                    'dataset_url': infos.DATASET_URLS[env_name],
+                },
             )
 
 

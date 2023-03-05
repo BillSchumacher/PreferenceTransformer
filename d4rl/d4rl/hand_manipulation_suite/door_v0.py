@@ -16,11 +16,11 @@ class DoorEnvV0(mujoco_env.MujocoEnv, utils.EzPickle, offline_env.OfflineEnv):
         self.grasp_sid = 0
         self.handle_sid = 0
         curr_dir = os.path.dirname(os.path.abspath(__file__))
-        mujoco_env.MujocoEnv.__init__(self, curr_dir+'/assets/DAPG_door.xml', 5)
-        
+        mujoco_env.MujocoEnv.__init__(self, f'{curr_dir}/assets/DAPG_door.xml', 5)
+
         # Override action_space to -1, 1
         self.action_space = spaces.Box(low=-1.0, high=1.0, dtype=np.float32, shape=self.action_space.shape)
-        
+
         # change actuator sensitivity
         self.sim.model.actuator_gainprm[self.sim.model.actuator_name2id('A_WRJ1'):self.sim.model.actuator_name2id('A_WRJ0')+1,:3] = np.array([10, 0, 0])
         self.sim.model.actuator_gainprm[self.sim.model.actuator_name2id('A_FFJ3'):self.sim.model.actuator_name2id('A_THJ0')+1,:3] = np.array([1, 0, 0])
@@ -64,7 +64,7 @@ class DoorEnvV0(mujoco_env.MujocoEnv, utils.EzPickle, offline_env.OfflineEnv):
             if door_pos > 1.35:
                 reward += 10
 
-        goal_achieved = True if door_pos >= 1.35 else False
+        goal_achieved = door_pos >= 1.35
 
         return ob, reward, False, dict(goal_achieved=goal_achieved)
 
@@ -76,10 +76,7 @@ class DoorEnvV0(mujoco_env.MujocoEnv, utils.EzPickle, offline_env.OfflineEnv):
         handle_pos = self.data.site_xpos[self.handle_sid].ravel()
         palm_pos = self.data.site_xpos[self.grasp_sid].ravel()
         door_pos = np.array([self.data.qpos[self.door_hinge_did]])
-        if door_pos > 1.0:
-            door_open = 1.0
-        else:
-            door_open = -1.0
+        door_open = 1.0 if door_pos > 1.0 else -1.0
         latch_pos = qp[-1]
         return np.concatenate([qp[1:-2], [latch_pos], door_pos, palm_pos, handle_pos, palm_pos-handle_pos, [door_open]])
 
@@ -120,11 +117,8 @@ class DoorEnvV0(mujoco_env.MujocoEnv, utils.EzPickle, offline_env.OfflineEnv):
         self.viewer.cam.distance = 1.5
 
     def evaluate_success(self, paths):
-        num_success = 0
         num_paths = len(paths)
-        # success if door open for 25 steps
-        for path in paths:
-            if np.sum(path['env_infos']['goal_achieved']) > 25:
-                num_success += 1
-        success_percentage = num_success*100.0/num_paths
-        return success_percentage
+        num_success = sum(
+            np.sum(path['env_infos']['goal_achieved']) > 25 for path in paths
+        )
+        return num_success*100.0/num_paths

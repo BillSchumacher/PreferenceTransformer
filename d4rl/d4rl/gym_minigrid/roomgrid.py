@@ -52,13 +52,7 @@ class Room:
         topX, topY = self.top
         sizeX, sizeY = self.size
 
-        if x < topX or y < topY:
-            return False
-
-        if x >= topX + sizeX or y >= topY + sizeY:
-            return False
-
-        return True
+        return False if x < topX or y < topY else x < topX + sizeX and y < topY + sizeY
 
 class RoomGrid(MiniGridEnv):
     """
@@ -122,11 +116,11 @@ class RoomGrid(MiniGridEnv):
         self.room_grid = []
 
         # For each row of rooms
-        for j in range(0, self.num_rows):
+        for j in range(self.num_rows):
             row = []
 
             # For each column of rooms
-            for i in range(0, self.num_cols):
+            for i in range(self.num_cols):
                 room = Room(
                     (i * (self.room_size-1), j * (self.room_size-1)),
                     (self.room_size, self.room_size)
@@ -139,9 +133,9 @@ class RoomGrid(MiniGridEnv):
             self.room_grid.append(row)
 
         # For each row of rooms
-        for j in range(0, self.num_rows):
+        for j in range(self.num_rows):
             # For each column of rooms
-            for i in range(0, self.num_cols):
+            for i in range(self.num_cols):
                 room = self.room_grid[j][i]
 
                 x_l, y_l = (room.top[0] + 1, room.top[1] + 1)
@@ -192,10 +186,10 @@ class RoomGrid(MiniGridEnv):
         Add a new object to room (i, j)
         """
 
-        if kind == None:
+        if kind is None:
             kind = self._rand_elem(['key', 'ball', 'box'])
 
-        if color == None:
+        if color is None:
             color = self._rand_color()
 
         # TODO: we probably want to add an Object.make helper function
@@ -216,7 +210,7 @@ class RoomGrid(MiniGridEnv):
 
         room = self.get_room(i, j)
 
-        if door_idx == None:
+        if door_idx is None:
             # Need to make sure that there is a neighbor along this wall
             # and that there is not already a door
             while True:
@@ -224,7 +218,7 @@ class RoomGrid(MiniGridEnv):
                 if room.neighbors[door_idx] and room.doors[door_idx] is None:
                     break
 
-        if color == None:
+        if color is None:
             color = self._rand_color()
 
         if locked is None:
@@ -286,9 +280,9 @@ class RoomGrid(MiniGridEnv):
         Place the agent in a room
         """
 
-        if i == None:
+        if i is None:
             i = self._rand_int(0, self.num_cols)
-        if j == None:
+        if j is None:
             j = self._rand_int(0, self.num_rows)
 
         room = self.room_grid[j][i]
@@ -315,12 +309,12 @@ class RoomGrid(MiniGridEnv):
         def find_reach():
             reach = set()
             stack = [start_room]
-            while len(stack) > 0:
+            while stack:
                 room = stack.pop()
                 if room in reach:
                     continue
                 reach.add(room)
-                for i in range(0, 4):
+                for i in range(4):
                     if room.doors[i]:
                         stack.append(room.neighbors[i])
             return reach
@@ -367,9 +361,7 @@ class RoomGrid(MiniGridEnv):
         objs = []
         for row in self.room_grid:
             for room in row:
-                for obj in room.objs:
-                    objs.append((obj.type, obj.color))
-
+                objs.extend((obj.type, obj.color) for obj in room.objs)
         # List of distractors added
         dists = []
 
@@ -384,9 +376,9 @@ class RoomGrid(MiniGridEnv):
             # Add the object to a random room if no room specified
             room_i = i
             room_j = j
-            if room_i == None:
+            if room_i is None:
                 room_i = self._rand_int(0, self.num_cols)
-            if room_j == None:
+            if room_j is None:
                 room_j = self._rand_int(0, self.num_rows)
 
             dist, pos = self.add_object(room_i, room_j, *obj)

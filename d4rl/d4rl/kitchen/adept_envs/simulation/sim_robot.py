@@ -49,9 +49,7 @@ class MujocoSimRobot:
         self._use_dm_backend = use_dm_backend
 
         if not os.path.isfile(model_file):
-            raise ValueError(
-                '[MujocoSimRobot] Invalid model file path: {}'.format(
-                    model_file))
+            raise ValueError(f'[MujocoSimRobot] Invalid model file path: {model_file}')
 
         if self._use_dm_backend:
             dm_mujoco = module.get_dm_mujoco()
@@ -79,10 +77,9 @@ class MujocoSimRobot:
     def save_binary(self, path: str):
         """Saves the loaded model to a binary .mjb file."""
         if os.path.exists(path):
-            raise ValueError(
-                '[MujocoSimRobot] Path already exists: {}'.format(path))
+            raise ValueError(f'[MujocoSimRobot] Path already exists: {path}')
         if not path.endswith('.mjb'):
-            path = path + '.mjb'
+            path += '.mjb'
         if self._use_dm_backend:
             self.model.save_binary(path)
         else:

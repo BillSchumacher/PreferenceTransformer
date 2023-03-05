@@ -84,7 +84,7 @@ class MJCTreeNode(object):
     def add_attr(self, key, value):
         if isinstance(value, str):
             pass
-        elif isinstance(value, list) or isinstance(value, np.ndarray):
+        elif isinstance(value, (list, np.ndarray)):
             value = ' '.join([str(val).lower() for val in value])
         else:
             value = str(value).lower()
@@ -105,8 +105,7 @@ class MJCTreeNode(object):
         yield self
         if self.children:
             for child in self.children:
-                for node in child.dfs():
-                    yield node
+                yield from child.dfs()
 
     def find_attr(self, attr, value):
         """ Run DFS to find a matching attr """
@@ -120,7 +119,7 @@ class MJCTreeNode(object):
 
 
     def write(self, ostream, tabs=0):
-        contents = ' '.join(['%s="%s"'%(k,v) for (k,v) in self.attrs.items()])
+        contents = ' '.join([f'{k}="{v}"' for (k,v) in self.attrs.items()])
         if self.children:
             ostream.write('\t'*tabs)
             ostream.write('<%s %s>\n' % (self.name, contents))
@@ -133,6 +132,6 @@ class MJCTreeNode(object):
             ostream.write('<%s %s/>\n' % (self.name, contents))
 
     def __str__(self):
-        s = "<"+self.name
-        s += ' '.join(['%s="%s"'%(k,v) for (k,v) in self.attrs.items()])
-        return s+">"
+        s = f"<{self.name}"
+        s += ' '.join([f'{k}="{v}"' for (k,v) in self.attrs.items()])
+        return f"{s}>"

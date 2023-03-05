@@ -263,7 +263,7 @@ class MazeEnv(gym.Env):
 
     # If there is a 'goal' designated, use that. Otherwise, any valid cell can
     # be a goal.
-    sample_choices = goal_cells if goal_cells else valid_cells
+    sample_choices = goal_cells or valid_cells
     cell = sample_choices[np_random.choice(len(sample_choices))]
     xy = self._rowcol_to_xy(cell, add_random_noise=True)
 

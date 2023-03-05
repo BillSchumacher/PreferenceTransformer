@@ -28,11 +28,7 @@ class GoalReachingEnv(object):
   def _get_obs(self):
     base_obs = self.BASE_ENV._get_obs(self)
     goal_direction = self._goal - self.get_xy()
-    if not self.eval:
-      obs = np.concatenate([base_obs, goal_direction])
-      return obs
-    else:
-      return base_obs
+    return base_obs if self.eval else np.concatenate([base_obs, goal_direction])
 
   def step(self, a):
     self.BASE_ENV.step(self, a)
@@ -40,12 +36,9 @@ class GoalReachingEnv(object):
       reward = np.exp(-np.linalg.norm(self.target_goal - self.get_xy()))
     elif self.reward_type == 'sparse':
       reward = 1.0 if np.linalg.norm(self.get_xy() - self.target_goal) <= 0.5 else 0.0
-    
-    done = False
-    # Terminate episode when we reach a goal
-    if self.eval and np.linalg.norm(self.get_xy() - self.target_goal) <= 0.5:
-      done = True
 
+    done = bool(
+        self.eval and np.linalg.norm(self.get_xy() - self.target_goal) <= 0.5)
     obs = self._get_obs()
     return obs, reward, done, {}
 

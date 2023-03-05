@@ -22,7 +22,7 @@ def main(env_name):
     if env_name is "":
         print("Unknown env.")
         return
-    demos = pickle.load(open('./demonstrations/'+env_name+'_demos.pickle', 'rb'))
+    demos = pickle.load(open(f'./demonstrations/{env_name}_demos.pickle', 'rb'))
     # render demonstrations
     demo_playback(env_name, demos, clip=True)
 
@@ -38,7 +38,8 @@ def demo_playback(env_name, demo_paths, clip=False):
     info_qpos_ = []
     info_qvel_ = []
     info_env_state_ = collections.defaultdict(list)
-    
+
+    done = False
     for i, path in enumerate(demo_paths):
         e.set_env_state(path['init_state_dict'])
         actions = path['actions']
@@ -58,7 +59,6 @@ def demo_playback(env_name, demo_paths, clip=False):
 
             rew_.append(rew)
 
-            done = False
             timeout = False
             if t == (actions.shape[0]-1):
                 timeout = True
@@ -69,8 +69,8 @@ def demo_playback(env_name, demo_paths, clip=False):
             term_.append(done)
             timeout_.append(timeout)
 
-            #e.env.mj_render() # this is much faster
-            #e.render()
+                    #e.env.mj_render() # this is much faster
+                    #e.render()
         print(i, returns, returns/float(actions.shape[0]))
 
     # write out hdf5 file
@@ -83,9 +83,9 @@ def demo_playback(env_name, demo_paths, clip=False):
     info_qvel_ = np.array(info_qvel_).astype(np.float32)
 
     if clip:
-        dataset = h5py.File('%s_demos_clipped.hdf5' % env_name, 'w')
+        dataset = h5py.File(f'{env_name}_demos_clipped.hdf5', 'w')
     else:
-        dataset = h5py.File('%s_demos.hdf5' % env_name, 'w')
+        dataset = h5py.File(f'{env_name}_demos.hdf5', 'w')
     #dataset.create_dataset('observations', obs_.shape, dtype='f4')
     dataset.create_dataset('observations', data=obs_, compression='gzip')
     dataset.create_dataset('actions', data=act_, compression='gzip')
@@ -95,7 +95,11 @@ def demo_playback(env_name, demo_paths, clip=False):
     #dataset['infos/qpos'] = info_qpos_
     #dataset['infos/qvel'] = info_qvel_
     for k in info_env_state_:
-        dataset.create_dataset('infos/%s' % k, data=np.array(info_env_state_[k], dtype=np.float32), compression='gzip')
+        dataset.create_dataset(
+            f'infos/{k}',
+            data=np.array(info_env_state_[k], dtype=np.float32),
+            compression='gzip',
+        )
 
 if __name__ == '__main__':
     main()

@@ -20,7 +20,7 @@ def main():
         s = env.reset()
         controller = data_collection_agent_lane.RoamingAgent(env)
         returns = 0
-        for t in range(env._max_episode_steps):
+        for _ in range(env._max_episode_steps):
             act = controller.compute_action()
 
             s, rew, done, _ = env.step(act)

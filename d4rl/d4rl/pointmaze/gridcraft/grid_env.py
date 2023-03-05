@@ -66,9 +66,7 @@ class RewardFunction(object):
 
     def __call__(self, gridspec, s, a, ns):
         val = gridspec[gridspec.idx_to_xy(s)]
-        if val in self.rew_map:
-            return self.rew_map[val]
-        return self.default
+        return self.rew_map[val] if val in self.rew_map else self.default
 
 
 class GridEnv(gym.Env):
@@ -123,7 +121,7 @@ class GridEnv(gym.Env):
         rew = self.rew_fn(self.gs, s, samp_a, next_s_idx)
 
         if verbose:
-            print('Act: %s. Act Executed: %s' % (ACT_TO_STR[a], ACT_TO_STR[samp_a]))
+            print(f'Act: {ACT_TO_STR[a]}. Act Executed: {ACT_TO_STR[samp_a]}')
         return next_s_idx, rew
 
     def step(self, a, verbose=False):
@@ -132,11 +130,8 @@ class GridEnv(gym.Env):
         self.__state = ns
         obs = ns #flat_to_one_hot(ns, len(self.gs))
 
-        done = False
         self._timestep += 1
-        if self.max_timesteps is not None:
-            if self._timestep >= self.max_timesteps:
-                done = True
+        done = self.max_timesteps is not None and self._timestep >= self.max_timesteps
         return obs, r, done, traj_infos
 
     def reset(self):

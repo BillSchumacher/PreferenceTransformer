@@ -55,10 +55,7 @@ class FourRoomController(object):
         self.env.gs[target] = grid_spec.EMPTY
 
     def get_action(self, pos, orientation):
-        if tuple(pos) == tuple(self.target):
-            done = True
-        else:
-            done = False
+        done = tuple(pos) == tuple(self.target)
         env_pos_idx = self.env.gs.xy_to_idx(pos)
         qvalues = self.q_values[env_pos_idx]
         direction = TRANSLATE_DIRECTION[np.argmax(qvalues)]
@@ -67,7 +64,7 @@ class FourRoomController(object):
         #print('\tcmd_dir:', direction, np.argmax(qvalues), qvalues, tgt_pos)
         #infos = {}
         #infos['tgt_pos'] = tgt_pos
-        if orientation == direction or direction == None:
+        if orientation == direction or direction is None:
             return FORWARD, done
         else:
             return get_turn(orientation, direction), done

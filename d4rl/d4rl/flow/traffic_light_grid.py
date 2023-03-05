@@ -44,10 +44,10 @@ def gen_env(render='drgb'):
 
     # inflows of vehicles are place on all outer edges (listed here)
     outer_edges = []
-    outer_edges += ["left{}_{}".format(N_ROWS, i) for i in range(N_COLUMNS)]
-    outer_edges += ["right0_{}".format(i) for i in range(N_ROWS)]
-    outer_edges += ["bot{}_0".format(i) for i in range(N_ROWS)]
-    outer_edges += ["top{}_{}".format(i, N_COLUMNS) for i in range(N_ROWS)]
+    outer_edges += [f"left{N_ROWS}_{i}" for i in range(N_COLUMNS)]
+    outer_edges += [f"right0_{i}" for i in range(N_ROWS)]
+    outer_edges += [f"bot{i}_0" for i in range(N_ROWS)]
+    outer_edges += [f"top{i}_{N_COLUMNS}" for i in range(N_ROWS)]
 
     # equal inflows for each edge (as dictate by the EDGE_INFLOW constant)
     inflow = InFlows()
@@ -59,19 +59,15 @@ def gen_env(render='drgb'):
             depart_lane="free",
             depart_speed=V_ENTER)
 
-    flow_params = dict(
+    return dict(
         # name of the experiment
         exp_tag="grid_0",
-
         # name of the flow environment the experiment is running on
         env_name=TrafficLightGridBenchmarkEnv,
-
         # name of the network class the experiment is running on
         network=TrafficLightGridNetwork,
-
         # simulator that is used by the experiment
         simulator='traci',
-
         # sumo-related parameters (see flow.core.params.SumoParams)
         sim=SumoParams(
             restart_instance=True,
@@ -79,7 +75,6 @@ def gen_env(render='drgb'):
             render=render,
             save_render=True,
         ),
-
         # environment related parameters (see flow.core.params.EnvParams)
         env=EnvParams(
             horizon=HORIZON,
@@ -88,10 +83,9 @@ def gen_env(render='drgb'):
                 "switch_time": 3,
                 "num_observed": 2,
                 "discrete": False,
-                "tl_type": "actuated"
+                "tl_type": "actuated",
             },
         ),
-
         # network-related parameters (see flow.core.params.NetParams and the
         # network's documentation or ADDITIONAL_NET_PARAMS component)
         net=NetParams(
@@ -113,11 +107,9 @@ def gen_env(render='drgb'):
                 "vertical_lanes": 1,
             },
         ),
-
         # vehicles to be placed in the network at the start of a rollout (see
         # flow.core.params.VehicleParams)
         veh=vehicles,
-
         # parameters specifying the positioning of vehicles upon initialization/
         # reset (see flow.core.params.InitialConfig)
         initial=InitialConfig(
@@ -125,4 +117,3 @@ def gen_env(render='drgb'):
             shuffle=True,
         ),
     )
-    return flow_params

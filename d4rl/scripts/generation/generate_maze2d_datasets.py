@@ -30,11 +30,7 @@ def append_data(data, s, a, tgt, done, env_data):
 
 def npify(data):
     for k in data:
-        if k == 'terminals':
-            dtype = np.bool_
-        else:
-            dtype = np.float32
-
+        dtype = np.bool_ if k == 'terminals' else np.float32
         data[k] = np.array(data[k], dtype=dtype)
 
 def main():
@@ -60,7 +56,7 @@ def main():
     data = reset_data()
     ts = 0
     for _ in range(args.num_samples):
-        position = s[0:2]
+        position = s[:2]
         velocity = s[2:4]
         act, done = controller.get_action(position, velocity, env._target)
         if args.noisy:
@@ -87,11 +83,11 @@ def main():
         if args.render:
             env.render()
 
-    
+
     if args.noisy:
-        fname = '%s-noisy.hdf5' % args.env_name
+        fname = f'{args.env_name}-noisy.hdf5'
     else:
-        fname = '%s.hdf5' % args.env_name
+        fname = f'{args.env_name}.hdf5'
     dataset = h5py.File(fname, 'w')
     npify(data)
     for k in data:

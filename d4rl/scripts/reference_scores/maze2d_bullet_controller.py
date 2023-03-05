@@ -29,8 +29,8 @@ def main():
         controller = waypoint_controller.WaypointController(env.env.str_maze_spec, p_gain=p_gain, d_gain=d_gain)
         s = env.reset()
         returns = 0
-        for t in range(env._max_episode_steps):
-            position = s[0:2] 
+        for _ in range(env._max_episode_steps):
+            position = s[:2]
             velocity = s[2:4]
             act, done = controller.get_action(position, velocity, np.array(env.env.get_target()))
             #print(position-1, controller.current_waypoint(), np.array(env.env.get_target()) - 1)
