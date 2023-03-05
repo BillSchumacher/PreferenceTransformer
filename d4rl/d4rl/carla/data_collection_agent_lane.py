@@ -160,7 +160,7 @@ def draw_image(surface, image, blend=False):
 
 
 def get_font():
-    fonts = [x for x in pygame.font.get_fonts()]
+    fonts = list(pygame.font.get_fonts())
     default_font = 'ubuntumono'
     font = default_font if default_font in fonts else fonts[0]
     font = pygame.font.match_font(font)
@@ -168,13 +168,13 @@ def get_font():
 
 
 def should_quit():
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            return True
-        elif event.type == pygame.KEYUP:
-            if event.key == pygame.K_ESCAPE:
-                return True
-    return False
+    return any(
+        event.type != pygame.QUIT
+        and event.type == pygame.KEYUP
+        and event.key == pygame.K_ESCAPE
+        or event.type == pygame.QUIT
+        for event in pygame.event.get()
+    )
 
 
 def clamp(value, minimum=0.0, maximum=100.0):
@@ -257,7 +257,7 @@ class Weather(object):
         self.world.set_weather(self.weather)
 
     def __str__(self):
-        return '%s %s' % (self._sun, self._storm)
+        return f'{self._sun} {self._storm}'
 
 
 def parse_args():
@@ -270,8 +270,7 @@ def parse_args():
     parser.add_argument('--multiagent', default=False, action='store_true'),
     parser.add_argument('--lane', type=int, default=0)
     parser.add_argument('--lights', default=False, action='store_true')
-    args = parser.parse_args()
-    return args
+    return parser.parse_args()
 
 
 class LocalPlannerModified(LocalPlanner):
@@ -308,14 +307,12 @@ class RoamingAgent(Agent):
 
     def compute_action(self):
         action, traffic_light = self.run_step()
-        throttle = action.throttle
         brake = action.brake
         steer = action.steer
-        #print('tbsl:', throttle, brake, steer, traffic_light)
-        if brake == 0.0:
-            return np.array([throttle, steer])
-        else:
+        if brake != 0.0:
             return np.array([-brake, steer])
+        throttle = action.throttle
+        return np.array([throttle, steer])
 
     def run_step(self):
         """
@@ -398,41 +395,44 @@ class RoamingAgent(Agent):
             # It is too late. Do not block the intersection! Keep going!
             return "JUNCTION"
 
-        if self._local_planner.target_waypoint is not None:
-            if self._local_planner.target_waypoint.is_junction:
-                min_angle = 180.0
-                sel_magnitude = 0.0
-                sel_traffic_light = None
-                for traffic_light in lights_list:
-                    loc = traffic_light.get_location()
-                    magnitude, angle = compute_magnitude_angle(loc,
-                                                               ego_vehicle_location,
-                                                               self._vehicle.get_transform().rotation.yaw)
-                    if magnitude < 60.0 and angle < min(25.0, min_angle):
-                        sel_magnitude = magnitude
-                        sel_traffic_light = traffic_light
-                        min_angle = angle
+        if (
+            self._local_planner.target_waypoint is not None
+            and self._local_planner.target_waypoint.is_junction
+        ):
+            min_angle = 180.0
+            sel_magnitude = 0.0
+            sel_traffic_light = None
+            for traffic_light in lights_list:
+                loc = traffic_light.get_location()
+                magnitude, angle = compute_magnitude_angle(loc,
+                                                           ego_vehicle_location,
+                                                           self._vehicle.get_transform().rotation.yaw)
+                if magnitude < 60.0 and angle < min(25.0, min_angle):
+                    sel_magnitude = magnitude
+                    sel_traffic_light = traffic_light
+                    min_angle = angle
 
-                if sel_traffic_light is not None:
-                    if debug:
-                        print('=== Magnitude = {} | Angle = {} | ID = {}'.format(
-                            sel_magnitude, min_angle, sel_traffic_light.id))
+            if sel_traffic_light is not None:
+                if debug:
+                    print(
+                        f'=== Magnitude = {sel_magnitude} | Angle = {min_angle} | ID = {sel_traffic_light.id}'
+                    )
 
-                    if self._last_traffic_light is None:
-                        self._last_traffic_light = sel_traffic_light
+                if self._last_traffic_light is None:
+                    self._last_traffic_light = sel_traffic_light
 
-                    if self._last_traffic_light.state == carla.TrafficLightState.Red:
-                        return "RED"
-                    elif self._last_traffic_light.state == carla.TrafficLightState.Yellow:
-                        traffic_light_color = "YELLOW"
-                    elif self._last_traffic_light.state == carla.TrafficLightState.Green:
-                        if traffic_light_color is not "YELLOW":  # (more severe)
-                            traffic_light_color = "GREEN"
-                    else:
-                        import pdb; pdb.set_trace()
-                        # investigate https://carla.readthedocs.io/en/latest/python_api/#carlatrafficlightstate
+                if self._last_traffic_light.state == carla.TrafficLightState.Red:
+                    return "RED"
+                elif self._last_traffic_light.state == carla.TrafficLightState.Yellow:
+                    traffic_light_color = "YELLOW"
+                elif self._last_traffic_light.state == carla.TrafficLightState.Green:
+                    if traffic_light_color is not "YELLOW":  # (more severe)
+                        traffic_light_color = "GREEN"
                 else:
-                    self._last_traffic_light = None
+                    import pdb; pdb.set_trace()
+                    # investigate https://carla.readthedocs.io/en/latest/python_api/#carlatrafficlightstate
+            else:
+                self._last_traffic_light = None
 
         return traffic_light_color
 

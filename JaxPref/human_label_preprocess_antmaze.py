@@ -69,12 +69,7 @@ def qlearning_ant_dataset(env, dataset=None, terminate_on_end=False, **kwargs):
     qpos_ = []
     qvel_ = []
 
-    # The newer version of the dataset adds an explicit
-    # timeouts field. Keep old method for backwards compatability.
-    use_timeouts = False
-    if "timeouts" in dataset:
-        use_timeouts = True
-
+    use_timeouts = "timeouts" in dataset
     episode_step = 0
     for i in range(N - 1):
         obs = dataset["observations"][i].astype(np.float32)
@@ -250,8 +245,7 @@ def visualize_query(
                 draw.text((width - 10, 0), f"{t + 1}", fill="black")
                 draw.text((0, 0), "0", fill="black")
                 curr_frame = np.asarray(frame_img)
-            for i in range(10):
-                frames.append(curr_frame)
+            frames.extend(curr_frame for _ in range(10))
         gym_env.reset()
         for t in trange(query_len, leave=False):
             gym_env.set_state(
@@ -275,9 +269,7 @@ def visualize_query(
                 draw.text((0, 0), "1", fill="black")
                 curr_frame = np.asarray(frame_img)
                 curr_frame = np.asarray(frame_img)
-            for i in range(10):
-                frames_2.append(curr_frame)
-
+            frames_2.extend(curr_frame for _ in range(10))
         video = np.concatenate((np.array(frames), np.array(frames_2)), axis=2)
 
         fps = 3 if FLAGS.slow else 30

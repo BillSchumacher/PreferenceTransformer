@@ -62,7 +62,7 @@ class ConfigCache(object):
         """
         config_key = self._get_config_key(cls_or_env_id)
         config = dict(self._default_config)
-        config.update(self._configs.get(config_key, {}))
+        config |= self._configs.get(config_key, {})
         return config
 
     def clear_config(self, cls_or_env_id):
@@ -77,7 +77,7 @@ class ConfigCache(object):
         env_id = cls_or_env_id
         assert isinstance(env_id, str)
         if env_id not in gym_registry.env_specs:
-            raise ValueError("Unregistered environment name {}.".format(env_id))
+            raise ValueError(f"Unregistered environment name {env_id}.")
         entry_point = gym_registry.env_specs[env_id]._entry_point
         if callable(entry_point):
             return entry_point

@@ -20,14 +20,11 @@ def main():
     env.reset()
     print(env.action_space)
 
-    
+
     if args.controller == 'idm':
         uenv = env.unwrapped
         veh_ids = uenv.k.vehicle.get_rl_ids()
-        if hasattr(uenv, 'num_rl'):
-            num_rl = uenv.num_rl
-        else:
-            num_rl = len(veh_ids)
+        num_rl = uenv.num_rl if hasattr(uenv, 'num_rl') else len(veh_ids)
         if num_rl == 0:
             raise ValueError("No RL vehicles")
         controllers = []
@@ -44,11 +41,12 @@ def main():
                     break
                 actions[i] = car_following_models.IDMController(veh_id, car_following_params=car_following_params).get_accel(env)
             return actions
+
     elif args.controller == 'random':
         def get_action(s):
             return env.action_space.sample()
     else:
-        raise ValueError("Unknown controller type: %s" % str(args.controller))
+        raise ValueError(f"Unknown controller type: {str(args.controller)}")
 
     writer = dataset_utils.DatasetWriter()
     while len(writer) < args.num_samples:
@@ -62,7 +60,7 @@ def main():
             s = ns
         print(ret)
         #env.render()
-    fname = '%s-%s.hdf5' % (args.env_name, args.controller)
+    fname = f'{args.env_name}-{args.controller}.hdf5'
     writer.write_dataset(fname, max_size=args.num_samples)
 
 if __name__ == "__main__":

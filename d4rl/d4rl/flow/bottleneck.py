@@ -92,19 +92,15 @@ def bottleneck(render='drgb'):
         inflows=inflow,
         additional_params=additional_net_params)
 
-    flow_params = dict(
+    return dict(
         # name of the experiment
         exp_tag="bottleneck_0",
-
         # name of the flow environment the experiment is running on
         env_name=BottleneckDesiredVelocityEnv,
-
         # name of the network class the experiment is running on
         network=BottleneckNetwork,
-
         # simulator that is used by the experiment
         simulator='traci',
-
         # sumo-related parameters (see flow.core.params.SumoParams)
         sim=SumoParams(
             sim_step=0.5,
@@ -113,7 +109,6 @@ def bottleneck(render='drgb'):
             print_warnings=False,
             restart_instance=True,
         ),
-
         # environment related parameters (see flow.core.params.EnvParams)
         env=EnvParams(
             warmup_steps=40,
@@ -121,18 +116,15 @@ def bottleneck(render='drgb'):
             horizon=HORIZON,
             additional_params=additional_env_params,
         ),
-
         # network-related parameters (see flow.core.params.NetParams and the
         # network's documentation or ADDITIONAL_NET_PARAMS component)
         net=NetParams(
             inflows=inflow,
             additional_params=additional_net_params,
         ),
-
         # vehicles to be placed in the network at the start of a rollout (see
         # flow.core.params.VehicleParams)
         veh=vehicles,
-
         # parameters specifying the positioning of vehicles upon initialization/
         # reset (see flow.core.params.InitialConfig)
         initial=InitialConfig(
@@ -141,9 +133,7 @@ def bottleneck(render='drgb'):
             lanes_distribution=float("inf"),
             edges_distribution=["2", "3", "4", "5"],
         ),
-
         # traffic lights to be introduced to specific nodes (see
         # flow.core.params.TrafficLightParams)
         tls=traffic_lights,
     )
-    return flow_params

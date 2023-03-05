@@ -55,8 +55,7 @@ class MujocoEnv(gym.Env):
         """
         self._seed()
         if not os.path.isfile(model_path):
-            raise IOError(
-                '[MujocoEnv]: Model path does not exist: {}'.format(model_path))
+            raise IOError(f'[MujocoEnv]: Model path does not exist: {model_path}')
         self.frame_skip = frame_skip
 
         self.sim_robot = MujocoSimRobot(
@@ -128,8 +127,7 @@ class MujocoEnv(gym.Env):
     def _reset(self):
         self.sim.reset()
         self.sim.forward()
-        ob = self.reset_model()
-        return ob
+        return self.reset_model()
 
     def set_state(self, qpos, qvel):
         assert qpos.shape == (self.model.nq,) and qvel.shape == (self.model.nv,)

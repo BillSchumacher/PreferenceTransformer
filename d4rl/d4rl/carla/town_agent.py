@@ -28,14 +28,12 @@ class RoamingAgent(Agent):
 
     def compute_action(self):
         action, traffic_light = self.run_step()
-        throttle = action.throttle
         brake = action.brake
         steer = action.steer
-        #print('tbsl:', throttle, brake, steer, traffic_light)
-        if brake == 0.0:
-            return np.array([throttle, steer])
-        else:
+        if brake != 0.0:
             return np.array([-brake, steer])
+        throttle = action.throttle
+        return np.array([throttle, steer])
 
     def run_step(self):
         """
@@ -66,14 +64,12 @@ class RoamingAgent(Agent):
             # standard local planner behavior
             control = self._local_planner.run_step()
 
-        throttle = control.throttle
         brake = control.brake
         steer = control.steer
-        #print('tbsl:', throttle, brake, steer, traffic_light)
-        if brake == 0.0:
-            return np.array([throttle, steer])
-        else:
+        if brake != 0.0:
             return np.array([-brake, steer])
+        throttle = control.throttle
+        return np.array([throttle, steer])
 
 
 class LocalPlannerModified(LocalPlanner):
@@ -140,11 +136,9 @@ class DummyTownAgent(Agent):
             self._state = AgentState.NAVIGATING
             # standard local planner behavior
             control = self._local_planner.run_step()
-        throttle = control.throttle
         brake = control.brake
         steer = control.steer
-        #print('tbsl:', throttle, brake, steer, traffic_light)
-        if brake == 0.0:
-            return np.array([throttle, steer])
-        else:
+        if brake != 0.0:
             return np.array([-brake, steer])
+        throttle = control.throttle
+        return np.array([throttle, steer])

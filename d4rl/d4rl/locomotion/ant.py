@@ -58,10 +58,7 @@ class AntEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     # Check mujoco version is greater than version 1.50 to call correct physics
     # model containing PyMjData object for getting and setting position/velocity.
     # Check https://github.com/openai/mujoco-py/issues/80 for updates to api.
-    if mujoco_py.get_version() >= '1.50':
-      return self.sim
-    else:
-      return self.model
+    return self.sim if mujoco_py.get_version() >= '1.50' else self.model
 
   def _step(self, a):
     return self.step(a)

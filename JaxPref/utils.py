@@ -63,7 +63,7 @@ class WandBLogger(object):
             self.config.experiment_id = uuid.uuid4().hex
 
         if self.config.prefix != '':
-            self.config.project = '{}--{}'.format(self.config.prefix, self.config.project)
+            self.config.project = f'{self.config.prefix}--{self.config.project}'
 
         if self.config.output_dir == '':
             self.config.output_dir = tempfile.mkdtemp()
@@ -143,7 +143,10 @@ def print_flags(flags, flags_def):
     logging.info(
         'Running training with hyperparameters: \n{}'.format(
             pprint.pformat(
-                ['{}: {}'.format(key, val) for key, val in get_user_flags(flags, flags_def).items()]
+                [
+                    f'{key}: {val}'
+                    for key, val in get_user_flags(flags, flags_def).items()
+                ]
             )
         )
     )
@@ -154,7 +157,7 @@ def get_user_flags(flags, flags_def):
     for key in flags_def:
         val = getattr(flags, key)
         if isinstance(val, ConfigDict):
-            output.update(flatten_config_dict(val, prefix=key))
+            output |= flatten_config_dict(val, prefix=key)
         else:
             output[key] = val
 
@@ -164,12 +167,9 @@ def get_user_flags(flags, flags_def):
 def flatten_config_dict(config, prefix=None):
     output = {}
     for key, val in config.items():
-        if prefix is not None:
-            next_prefix = '{}.{}'.format(prefix, key)
-        else:
-            next_prefix = key
+        next_prefix = f'{prefix}.{key}' if prefix is not None else key
         if isinstance(val, ConfigDict):
-            output.update(flatten_config_dict(val, prefix=next_prefix))
+            output |= flatten_config_dict(val, prefix=next_prefix)
         else:
             output[next_prefix] = val
     return output
@@ -180,6 +180,4 @@ def save_pickle(obj, filename, output_dir):
         pickle.dump(obj, fout)
             
 def prefix_metrics(metrics, prefix):
-    return {
-        '{}/{}'.format(prefix, key): value for key, value in metrics.items()
-    }
+    return {f'{prefix}/{key}': value for key, value in metrics.items()}

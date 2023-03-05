@@ -67,27 +67,22 @@ def gen_env(render='drgb'):
         depart_lane="free",
         depart_speed=7.5)
 
-    flow_params = dict(
+    return dict(
         # name of the experiment
         exp_tag="merge_0",
-
         # name of the flow environment the experiment is running on
         env_name=MergePOEnv,
-
         # name of the network class the experiment is running on
         network=MergeNetwork,
-
         # simulator that is used by the experiment
         simulator='traci',
-
         # sumo-related parameters (see flow.core.params.SumoParams)
         sim=SumoParams(
             restart_instance=True,
             sim_step=0.5,
             render=render,
-            save_render=True
+            save_render=True,
         ),
-
         # environment related parameters (see flow.core.params.EnvParams)
         env=EnvParams(
             horizon=HORIZON,
@@ -100,20 +95,16 @@ def gen_env(render='drgb'):
                 "num_rl": NUM_RL,
             },
         ),
-
         # network-related parameters (see flow.core.params.NetParams and the
         # network's documentation or ADDITIONAL_NET_PARAMS component)
         net=NetParams(
             inflows=inflow,
             additional_params=additional_net_params,
         ),
-
         # vehicles to be placed in the network at the start of a rollout (see
         # flow.core.params.VehicleParams)
         veh=vehicles,
-
         # parameters specifying the positioning of vehicles upon initialization/
         # reset (see flow.core.params.InitialConfig)
         initial=InitialConfig(),
     )
-    return flow_params

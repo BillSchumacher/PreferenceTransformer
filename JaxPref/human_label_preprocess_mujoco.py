@@ -66,12 +66,7 @@ def qlearning_mujoco_dataset(env, dataset=None, terminate_on_end=False, **kwargs
     qpos_ = []
     qvel_ = []
 
-    # The newer version of the dataset adds an explicit
-    # timeouts field. Keep old method for backwards compatability.
-    use_timeouts = False
-    if "timeouts" in dataset:
-        use_timeouts = True
-
+    use_timeouts = "timeouts" in dataset
     episode_step = 0
     for i in range(N - 1):
         obs = dataset["observations"][i].astype(np.float32)
@@ -189,6 +184,8 @@ def visualize_query(
     save_dir = os.path.join(save_dir, gym_env.spec.id)
     os.makedirs(save_dir, exist_ok=True)
 
+    camera_name = "track"
+
     for seg_idx in trange(num_query):
         start_1, start_2 = (
             batch["start_indices"][seg_idx],
@@ -206,8 +203,6 @@ def visualize_query(
             print(f"start pos of first one: {dataset['qposes'][start_indices[0]][:2]}")
             print("=" * 50)
             print(f"start pos of second one: {dataset['qposes'][start_indices_2[0]][:2]}")
-
-        camera_name = "track"
 
         for t in trange(query_len, leave=False):
             gym_env.set_state(dataset["qposes"][start_indices[t]], dataset["qvels"][start_indices[t]])

@@ -35,23 +35,23 @@ class FourRoomsEnv(MiniGridEnv):
         room_h = height // 2
 
         # For each row of rooms
-        for j in range(0, 2):
+        for j in range(2):
 
             # For each column
-            for i in range(0, 2):
+            for i in range(2):
                 xL = i * room_w
                 yT = j * room_h
                 xR = xL + room_w
                 yB = yT + room_h
 
                 # Bottom wall and door
-                if i + 1 < 2:
+                if i < 1:
                     self.grid.vert_wall(xR, yT, room_h)
                     pos = (xR, self._rand_int(yT + 1, yB))
                     self.grid.set(*pos, None)
 
                 # Bottom wall and door
-                if j + 1 < 2:
+                if j < 1:
                     self.grid.horz_wall(xL, yB, room_w)
                     pos = (self._rand_int(xL + 1, xR), yB)
                     self.grid.set(*pos, None)

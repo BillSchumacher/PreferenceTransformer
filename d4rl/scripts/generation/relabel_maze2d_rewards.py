@@ -14,12 +14,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
 
-    if args.maze == 'umaze':
-        maze = maze_model.U_MAZE
+    if args.maze == 'medium':
+        maze = maze_model.MEDIUM_MAZE
     elif args.maze == 'open':
         maze = maze_model.OPEN
-    elif args.maze == 'medium':
-        maze = maze_model.MEDIUM_MAZE
+    elif args.maze == 'umaze':
+        maze = maze_model.U_MAZE
     else:
         maze = maze_model.LARGE_MAZE
     env = MazeEnv(maze, reset_target=False, reward_type='sparse')
@@ -27,7 +27,7 @@ if __name__ == "__main__":
 
     rdataset = h5py.File(args.filename, 'r')
     fpath, ext = os.path.splitext(args.filename)
-    wdataset = h5py.File(fpath+'-'+args.relabel_type+ext, 'w')
+    wdataset = h5py.File(f'{fpath}-{args.relabel_type}{ext}', 'w')
 
     all_obs = rdataset['observations']
     if args.relabel_type == 'dense':
@@ -36,14 +36,13 @@ if __name__ == "__main__":
         _rew = (np.linalg.norm(all_obs[:,:2] - target_goal, axis=1) <= 0.5).astype(np.float32)
     else:
         _rew = rdataset['rewards'].value
-    
+
     for k in get_keys(rdataset):
         print(k)
         if k == 'rewards':
             wdataset.create_dataset(k, data=_rew, compression='gzip')
+        elif k.startswith('metadata'):
+            wdataset[k] = rdataset[k][()]
         else:
-            if k.startswith('metadata'):
-                wdataset[k] = rdataset[k][()]
-            else:
-                wdataset.create_dataset(k, data=rdataset[k], compression='gzip')
+            wdataset.create_dataset(k, data=rdataset[k], compression='gzip')
 

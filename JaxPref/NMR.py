@@ -57,11 +57,7 @@ class NMR(object):
         }[self.config.optimizer_type]
 
 
-        scheduler_class = {
-           'none': None
-        }[self.config.scheduler_type]
-
-        if scheduler_class:
+        if scheduler_class := {'none': None}[self.config.scheduler_type]:
             tx = optimizer_class(scheduler_class)
         else:
             tx = optimizer_class(learning_rate=self.config.lstm_lr)
@@ -78,10 +74,7 @@ class NMR(object):
         self._total_steps = 0
         
     def evaluation(self, batch):
-        metrics = self._eval_pref_step(
-            self._train_states, next_rng(), batch
-        )
-        return metrics
+        return self._eval_pref_step(self._train_states, next_rng(), batch)
 
     def get_reward(self, batch):
         return self._get_reward_step(self._train_states, batch)

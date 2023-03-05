@@ -18,7 +18,7 @@ class HammerEnvV0(mujoco_env.MujocoEnv, utils.EzPickle, offline_env.OfflineEnv):
         self.tool_sid = -1
         self.goal_sid = -1
         curr_dir = os.path.dirname(os.path.abspath(__file__))
-        mujoco_env.MujocoEnv.__init__(self, curr_dir+'/assets/DAPG_hammer.xml', 5)
+        mujoco_env.MujocoEnv.__init__(self, f'{curr_dir}/assets/DAPG_hammer.xml', 5)
 
         # Override action_space to -1, 1
         self.action_space = spaces.Box(low=-1.0, high=1.0, dtype=np.float32, shape=self.action_space.shape)
@@ -30,7 +30,7 @@ class HammerEnvV0(mujoco_env.MujocoEnv, utils.EzPickle, offline_env.OfflineEnv):
         self.sim.model.actuator_gainprm[self.sim.model.actuator_name2id('A_FFJ3'):self.sim.model.actuator_name2id('A_THJ0')+1,:3] = np.array([1, 0, 0])
         self.sim.model.actuator_biasprm[self.sim.model.actuator_name2id('A_WRJ1'):self.sim.model.actuator_name2id('A_WRJ0')+1,:3] = np.array([0, -10, 0])
         self.sim.model.actuator_biasprm[self.sim.model.actuator_name2id('A_FFJ3'):self.sim.model.actuator_name2id('A_THJ0')+1,:3] = np.array([0, -1, 0])
-        
+
         self.target_obj_sid = self.sim.model.site_name2id('S_target')
         self.S_grasp_sid = self.sim.model.site_name2id('S_grasp')
         self.obj_bid = self.sim.model.body_name2id('Object')
@@ -52,7 +52,7 @@ class HammerEnvV0(mujoco_env.MujocoEnv, utils.EzPickle, offline_env.OfflineEnv):
         tool_pos = self.data.site_xpos[self.tool_sid].ravel()
         target_pos = self.data.site_xpos[self.target_obj_sid].ravel()
         goal_pos = self.data.site_xpos[self.goal_sid].ravel()
-        
+
         # get to hammer
         reward = - 0.1 * np.linalg.norm(palm_pos - obj_pos)
         # take hammer head to nail
@@ -73,7 +73,7 @@ class HammerEnvV0(mujoco_env.MujocoEnv, utils.EzPickle, offline_env.OfflineEnv):
             if (np.linalg.norm(target_pos - goal_pos) < 0.010):
                 reward += 75
 
-        goal_achieved = True if np.linalg.norm(target_pos - goal_pos) < 0.010 else False
+        goal_achieved = np.linalg.norm(target_pos - goal_pos) < 0.010
 
         return ob, reward, False, dict(goal_achieved=goal_achieved)
 
@@ -125,11 +125,8 @@ class HammerEnvV0(mujoco_env.MujocoEnv, utils.EzPickle, offline_env.OfflineEnv):
         self.sim.forward()
 
     def evaluate_success(self, paths):
-        num_success = 0
         num_paths = len(paths)
-        # success if nail insude board for 25 steps
-        for path in paths:
-            if np.sum(path['env_infos']['goal_achieved']) > 25:
-                num_success += 1
-        success_percentage = num_success*100.0/num_paths
-        return success_percentage
+        num_success = sum(
+            np.sum(path['env_infos']['goal_achieved']) > 25 for path in paths
+        )
+        return num_success*100.0/num_paths

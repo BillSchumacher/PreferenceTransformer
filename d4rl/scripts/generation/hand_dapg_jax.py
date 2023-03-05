@@ -25,15 +25,15 @@ USAGE:\n
 def main(env_name, snapshot_file, mode, num_trajs, clip=True):
     e = GymEnv(env_name)
     pi = pickle.load(gzip.open(snapshot_file, 'rb'))
-    import pdb; pdb.set_trace()
-    pass
+    import pdb
+    pdb.set_trace()
     # render policy
     #pol_playback(env_name, pi, num_trajs, clip=clip)
 
 
 def extract_params(policy):
 
-    out_dict = {
+    return {
         'fc0/weight': _fc0w,
         'fc0/bias': _fc0b,
         'fc1/weight': params[2].data.numpy(),
@@ -43,7 +43,6 @@ def extract_params(policy):
         'last_fc_log_std/weight': _fclw,
         'last_fc_log_std/bias': _fclb,
     }
-    return out_dict
 
 
 def pol_playback(env_name, pi, num_trajs=100, clip=True):
@@ -62,7 +61,7 @@ def pol_playback(env_name, pi, num_trajs=100, clip=True):
     info_env_state_ = collections.defaultdict(list)
 
     ravg = []
-    
+
     for n in range(num_trajs):
         e.reset()
         returns = 0
@@ -74,7 +73,7 @@ def pol_playback(env_name, pi, num_trajs=100, clip=True):
             [info_env_state_[k].append(v) for k,v in e.get_env_state().items()]
             action, infos = pi.get_action(obs)
             action = pi.get_action(obs)[0] # eval
-            
+
             if clip:
                 action = np.clip(action, -1, 1)
 
@@ -115,9 +114,9 @@ def pol_playback(env_name, pi, num_trajs=100, clip=True):
     info_logstd_ = np.array(info_logstd_).astype(np.float32)
 
     if clip:
-        dataset = h5py.File('%s_expert_clip.hdf5' % env_name, 'w')
+        dataset = h5py.File(f'{env_name}_expert_clip.hdf5', 'w')
     else:
-        dataset = h5py.File('%s_expert.hdf5' % env_name, 'w')
+        dataset = h5py.File(f'{env_name}_expert.hdf5', 'w')
 
     #dataset.create_dataset('observations', obs_.shape, dtype='f4')
     dataset.create_dataset('observations', data=obs_, compression='gzip')
@@ -130,7 +129,11 @@ def pol_playback(env_name, pi, num_trajs=100, clip=True):
     dataset.create_dataset('infos/action_mean', data=info_mean_, compression='gzip')
     dataset.create_dataset('infos/action_log_std', data=info_logstd_, compression='gzip')
     for k in info_env_state_:
-        dataset.create_dataset('infos/%s' % k, data=np.array(info_env_state_[k], dtype=np.float32), compression='gzip')
+        dataset.create_dataset(
+            f'infos/{k}',
+            data=np.array(info_env_state_[k], dtype=np.float32),
+            compression='gzip',
+        )
 
     # write metadata
     policy_params = extract_params(pi)
@@ -138,7 +141,7 @@ def pol_playback(env_name, pi, num_trajs=100, clip=True):
     dataset['metadata/policy/nonlinearity'] = np.string_('tanh')
     dataset['metadata/policy/output_distribution'] = np.string_('gaussian')
     for k, v in policy_params.items():
-        dataset['metadata/policy/'+k] = v
+        dataset[f'metadata/policy/{k}'] = v
 
 if __name__ == '__main__':
     main()

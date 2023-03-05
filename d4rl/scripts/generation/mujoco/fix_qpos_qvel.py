@@ -15,22 +15,21 @@ def set_state_qpos(env, qpos, qvel):
 def pad_obs(env, obs, twod=False, scale=0.1):
     #TODO: sample val
     if twod:
-        val = env.init_qpos[0:2] + np.random.uniform(size=2, low=-.1, high=.1)
-        state = np.concatenate([np.ones(2)*val, obs])
+        val = env.init_qpos[:2] + np.random.uniform(size=2, low=-.1, high=.1)
+        return np.concatenate([np.ones(2)*val, obs])
     else:
-        val = env.init_qpos[0:1] + np.random.uniform(size=1, low=-scale, high=scale)
-        state = np.concatenate([np.ones(1)*val, obs])
-    return state
+        val = env.init_qpos[:1] + np.random.uniform(size=1, low=-scale, high=scale)
+        return np.concatenate([np.ones(1)*val, obs])
 
 def set_state_obs(env, obs):
     env_name = (str(unwrap_env(env).__class__))
     ant_env = 'Ant' in env_name
     hopper_walker_env = 'Hopper' in env_name or 'Walker' in env_name
     state = pad_obs(env, obs, twod=ant_env, scale=0.005 if hopper_walker_env else 0.1)
-    qpos_dim = env.sim.data.qpos.size
     if ant_env:
         env.set_state(state[:15], state[15:29])
     else:
+        qpos_dim = env.sim.data.qpos.size
         env.set_state(state[:qpos_dim], state[qpos_dim:])
 
 
@@ -39,14 +38,14 @@ def resync_state_obs(env, obs):
     ant_env = 'Ant' in (str(unwrap_env(env).__class__))
     cur_qpos, cur_qvel = env.sim.data.qpos.ravel().copy(), env.sim.data.qvel.ravel().copy()
     if ant_env:
-        cur_qpos[2:15] = obs[0:13]
+        cur_qpos[2:15] = obs[:13]
         cur_qvel = obs[13:27]
-        env.set_state(cur_qpos, cur_qvel)
     else:
         qpos_dim = env.sim.data.qpos.size
-        cur_qpos[1:] = obs[0:qpos_dim-1]
+        cur_qpos[1:] = obs[:qpos_dim-1]
         cur_qvel = obs[qpos_dim-1:]
-        env.set_state(cur_qpos, cur_qvel)
+
+    env.set_state(cur_qpos, cur_qvel)
 
 
 if __name__ == "__main__":
@@ -113,11 +112,10 @@ if __name__ == "__main__":
             try:
                 if 'reward' in k:
                     outf.create_dataset(k, data=inf[k][:].squeeze().astype(np.float32), compression='gzip')
+                elif 'terminals' in k or 'timeouts' in k:
+                    outf.create_dataset(k, data=inf[k][:].astype(np.bool), compression='gzip')
                 else:
-                    if 'terminals' in k or 'timeouts' in k:
-                        outf.create_dataset(k, data=inf[k][:].astype(np.bool), compression='gzip')
-                    else:
-                        outf.create_dataset(k, data=inf[k][:].astype(np.float32), compression='gzip')
+                    outf.create_dataset(k, data=inf[k][:].astype(np.float32), compression='gzip')
             except Exception as e:
                 print(e)
                 outf.create_dataset(k, data=inf[k])

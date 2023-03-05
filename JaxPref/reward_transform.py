@@ -21,13 +21,8 @@ def new_get_trj_idx(env, terminate_on_end=False, **kwargs):
 
     dataset = env.get_dataset(**kwargs)
     N = dataset['rewards'].shape[0]
-    
-    # The newer version of the dataset adds an explicit
-    # timeouts field. Keep old method for backwards compatability.
-    use_timeouts = False
-    if 'timeouts' in dataset:
-        use_timeouts = True
 
+    use_timeouts = 'timeouts' in dataset
     episode_step = 0
     start_idx, data_idx = 0, 0
     trj_idx_list = []
@@ -50,12 +45,12 @@ def new_get_trj_idx(env, terminate_on_end=False, **kwargs):
             episode_step = 0
             trj_idx_list.append([start_idx, data_idx])
             start_idx = data_idx + 1
-            
+
         episode_step += 1
         data_idx += 1
-        
+
     trj_idx_list.append([start_idx, data_idx])
-    
+
     return trj_idx_list
 
 

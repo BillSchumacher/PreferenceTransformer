@@ -1,6 +1,7 @@
 """
 A quick script to run a sanity check on all environments.
 """
+
 import gym
 import d4rl
 import numpy as np
@@ -9,11 +10,11 @@ ENVS = []
 
 for agent in ['halfcheetah', 'hopper', 'walker2d', 'ant']:
     for dataset in ['random', 'medium', 'expert', 'medium-replay', 'full-replay', 'medium-expert']:
-        ENVS.append(agent+'-'+dataset+'-v1')
+        ENVS.append(f'{agent}-{dataset}-v1')
 
 for agent in ['door', 'pen', 'relocate', 'hammer']:
     for dataset in ['expert', 'cloned', 'human']:
-        ENVS.append(agent+'-'+dataset+'-v1')
+        ENVS.append(f'{agent}-{dataset}-v1')
 
 ENVS.extend([
     'maze2d-open-v0',

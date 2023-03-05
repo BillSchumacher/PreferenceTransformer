@@ -11,7 +11,9 @@ import gym
 try:
     import mujoco_py
 except ImportError as e:
-    raise error.DependencyNotInstalled("{}. (HINT: you need to install mujoco_py, and also perform the setup instructions here: https://github.com/openai/mujoco-py/.)".format(e))
+    raise error.DependencyNotInstalled(
+        f"{e}. (HINT: you need to install mujoco_py, and also perform the setup instructions here: https://github.com/openai/mujoco-py/.)"
+    )
 
 DEFAULT_SIZE = 500
 
@@ -39,7 +41,7 @@ class MujocoGoalEnv(gym.Env):
         else:
             fullpath = os.path.join(os.path.dirname(__file__), "assets", model_path)
         if not path.exists(fullpath):
-            raise IOError("File %s does not exist" % fullpath)
+            raise IOError(f"File {fullpath} does not exist")
         self.frame_skip = frame_skip
         self.model = mujoco_py.load_model_from_path(fullpath)
         self.sim = mujoco_py.MjSim(self.model)
@@ -109,8 +111,7 @@ class MujocoGoalEnv(gym.Env):
     
     def reset(self):
         self.sim.reset()
-        ob = self.reset_model()
-        return ob
+        return self.reset_model()
 
     def set_state(self, qpos, qvel):
         assert qpos.shape == (self.model.nq,) and qvel.shape == (self.model.nv,)
@@ -173,7 +174,7 @@ class MujocoGoalEnv(gym.Env):
         if self.viewer is None:
             if mode == 'human':
                 self.viewer = mujoco_py.MjViewer(self.sim)
-            elif mode == 'rgb_array' or mode == 'depth_array':
+            elif mode in ['rgb_array', 'depth_array']:
                 self.viewer = mujoco_py.MjRenderContextOffscreen(self.sim, -1)
 
             self.viewer_setup()

@@ -1,4 +1,4 @@
-import d4rl.locomotion 
+import d4rl.locomotion
 from d4rl.offline_env import get_keys
 import os
 import argparse
@@ -6,7 +6,7 @@ import numpy as np
 import gym
 import h5py
 
-    
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--env_name', default='antmaze-umaze-v0', help='')
@@ -20,7 +20,7 @@ if __name__ == '__main__':
 
     rdataset = h5py.File(args.filename, 'r')
     fpath, ext = os.path.splitext(args.filename)
-    wdataset = h5py.File(fpath + '_' + args.relabel_type + ext, 'w')
+    wdataset = h5py.File(f'{fpath}_{args.relabel_type}{ext}', 'w')
 
     all_obs = rdataset['observations'][:]
 
@@ -37,7 +37,7 @@ if __name__ == '__main__':
     _terminals = np.concatenate([_terminals, np.array([0])], 0)
     _rew = np.concatenate([_rew, np.array([0])], 0)
     print ('Sum of rewards: ', _rew.sum())
-    
+
     for k in get_keys(rdataset):
         print(k)
         if k == 'rewards':

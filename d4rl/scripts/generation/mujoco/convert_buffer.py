@@ -25,10 +25,9 @@ def load(pklfile):
     return results
 
 def get_pkl_itr(pklfile):
-    match = itr_re.search(pklfile)
-    if match:
+    if match := itr_re.search(pklfile):
         return match.group('itr')
-    raise ValueError(pklfile+" has no iteration number.")
+    raise ValueError(f"{pklfile} has no iteration number.")
 
 
 if __name__ == "__main__":

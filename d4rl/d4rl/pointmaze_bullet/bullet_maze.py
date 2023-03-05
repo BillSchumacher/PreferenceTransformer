@@ -12,7 +12,9 @@ class MazeRobot(bullet_robot.MJCFBasedRobot):
     def __init__(self, maze_spec):
         model = maze_model.point_maze(maze_spec)
         maze_hash = hashlib.md5(maze_spec.encode('ascii')).hexdigest()
-        filename = os.path.join(offline_env.DATASET_PATH, 'tmp_bullet_xml', maze_hash+'.xml')
+        filename = os.path.join(
+            offline_env.DATASET_PATH, 'tmp_bullet_xml', f'{maze_hash}.xml'
+        )
         if not os.path.exists(filename):
             os.makedirs(os.path.dirname(filename), exist_ok=True)
             with model.asfile() as f:
@@ -29,15 +31,11 @@ class MazeRobot(bullet_robot.MJCFBasedRobot):
                                         self_collision=True)
     @property
     def qpos(self):
-        x = self.particle.get_position()[0:2]
-        return x
+        return self.particle.get_position()[:2]
 
     @property
     def qvel(self):
-        #vx = self.particle.speed()[0:2]
-        #vx = np.array([self.ball_x.get_velocity(), self.ball_y.get_velocity()], dtype=np.float32)
-        vx = (self.qpos - self.last_qpos) / self.dt
-        return vx
+        return (self.qpos - self.last_qpos) / self.dt
 
     def calc_state(self):
         #import pdb; pdb.set_trace()
@@ -86,9 +84,9 @@ class Maze2DBulletEnv(env_bases.MJCFBaseBulletEnv, offline_env.OfflineEnv):
         self.str_maze_spec = maze_spec
         self.maze_arr = maze_model.parse_maze(maze_spec)
         self.reward_type = reward_type
-        self.reset_locations = list(zip(*np.where(self.maze_arr == maze_model.EMPTY)))
-        self.reset_locations.sort()
-
+        self.reset_locations = sorted(
+            zip(*np.where(self.maze_arr == maze_model.EMPTY))
+        )
         self._target = np.array([0.0,0.0])
 
         # Set the default goal (overriden by a call to set_target)
@@ -114,8 +112,7 @@ class Maze2DBulletEnv(env_bases.MJCFBaseBulletEnv, offline_env.OfflineEnv):
           self.stateId = self._p.saveState()
 
         self.reset_model()
-        ob = self.robot.calc_state()
-        return ob
+        return self.robot.calc_state()
 
     def step(self, action):
         action = np.clip(action, -1.0, 1.0)
@@ -124,11 +121,11 @@ class Maze2DBulletEnv(env_bases.MJCFBaseBulletEnv, offline_env.OfflineEnv):
         self.scene.global_step()
         ob = self.robot.calc_state()
         if self.reward_type == 'sparse':
-            reward = 1.0 if np.linalg.norm(ob[0:2] - self._target) <= 0.5 else 0.0
+            reward = 1.0 if np.linalg.norm(ob[:2] - self._target) <= 0.5 else 0.0
         elif self.reward_type == 'dense':
-            reward = np.exp(-np.linalg.norm(ob[0:2] - self._target))
+            reward = np.exp(-np.linalg.norm(ob[:2] - self._target))
         else:
-            raise ValueError('Unknown reward type %s' % self.reward_type)
+            raise ValueError(f'Unknown reward type {self.reward_type}')
         done = False
         self.HUD(ob, action, done)
         return ob, reward, done, {}

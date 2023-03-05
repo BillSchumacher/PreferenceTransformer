@@ -33,11 +33,7 @@ def append_data(data, s, a, r, tgt, done, timeout, env_data):
 
 def npify(data):
     for k in data:
-        if k in ['terminals', 'timeouts']:
-            dtype = np.bool_
-        else:
-            dtype = np.float32
-
+        dtype = np.bool_ if k in ['terminals', 'timeouts'] else np.float32
         data[k] = np.array(data[k], dtype=dtype)
 
 def load_policy(policy_file):
@@ -48,13 +44,13 @@ def load_policy(policy_file):
     return policy, env
 
 def save_video(save_dir, file_name, frames, episode_id=0):
-    filename = os.path.join(save_dir, file_name+ '_episode_{}'.format(episode_id))
+    filename = os.path.join(save_dir, f'{file_name}_episode_{episode_id}')
     if not os.path.exists(filename):
         os.makedirs(filename)
     num_frames = frames.shape[0]
     for i in range(num_frames):
         img = Image.fromarray(np.flipud(frames[i]), 'RGB')
-        img.save(os.path.join(filename, 'frame_{}.png'.format(i)))
+        img.save(os.path.join(filename, f'frame_{i}.png'))
 
 def main():
     parser = argparse.ArgumentParser()
@@ -83,14 +79,14 @@ def main():
         maze = maze_env.HARDEST_MAZE_EVAL
     else:
         raise NotImplementedError
-    
+
     if args.env == 'Ant':
         env = NormalizedBoxEnv(ant.AntMazeEnv(maze_map=maze, maze_size_scaling=4.0, non_zero_reset=args.multi_start))
     elif args.env == 'Swimmer':
         env = NormalizedBoxEnv(swimmer.SwimmerMazeEnv(mmaze_map=maze, maze_size_scaling=4.0, non_zero_reset=args.multi_start))
     else:
         raise NotImplementedError
-    
+
     env.set_target()
     s = env.reset()
     act = env.action_space.sample()
@@ -120,7 +116,7 @@ def main():
 
     if args.video:
         frames = []
-    
+
     ts = 0
     num_episodes = 0
     for _ in range(args.num_samples):
@@ -135,7 +131,7 @@ def main():
         if ts >= args.max_episode_steps:
             timeout = True
             #done = True
-        
+
         append_data(data, s[:-2], act, r, env.target_goal, done, timeout, env.physics.data)
 
         if len(data['observations']) % 10000 == 0:
@@ -150,8 +146,8 @@ def main():
             env.set_target_goal()
             if args.video:
                 frames = np.array(frames)
-                save_video('./videos/', args.env + '_navigation', frames, num_episodes)
-            
+                save_video('./videos/', f'{args.env}_navigation', frames, num_episodes)
+
             num_episodes += 1
             frames = []
         else:
@@ -160,11 +156,11 @@ def main():
         if args.video:
             curr_frame = env.physics.render(width=500, height=500, depth=False)
             frames.append(curr_frame)
-    
+
     if args.noisy:
-        fname = args.env + '_maze_%s_noisy_multistart_%s_multigoal_%s.hdf5' % (args.maze, str(args.multi_start), str(args.multigoal))
+        fname = f'{args.env}_maze_{args.maze}_noisy_multistart_{str(args.multi_start)}_multigoal_{str(args.multigoal)}.hdf5'
     else:
-        fname = args.env + 'maze_%s_multistart_%s_multigoal_%s.hdf5' % (args.maze, str(args.multi_start), str(args.multigoal))
+        fname = f'{args.env}maze_{args.maze}_multistart_{str(args.multi_start)}_multigoal_{str(args.multigoal)}.hdf5'
     dataset = h5py.File(fname, 'w')
     npify(data)
     for k in data:

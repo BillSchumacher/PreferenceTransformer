@@ -76,9 +76,9 @@ def main():
         all_rewards = []
         all_terminals = []
         all_infos = []
-        print('Relabelling data for %s.' % env_name)
+        print(f'Relabelling data for {env_name}.')
         for demo_subdir, demos in all_demos.items():
-            print('On demo from %s.' % demo_subdir)
+            print(f'On demo from {demo_subdir}.')
             demos_obs = []
             demos_actions = []
             demos_rewards = []
@@ -132,11 +132,11 @@ def main():
             }
 
         print('Generated dataset with %d total steps.' % dataset_size)
-        save_filename = os.path.join(SAVE_DIRECTORY, '%s.hdf5' % env_name)
-        print('Saving dataset to %s.' % save_filename)
+        save_filename = os.path.join(SAVE_DIRECTORY, f'{env_name}.hdf5')
+        print(f'Saving dataset to {save_filename}.')
         h5_dataset = h5py.File(save_filename, 'w')
-        for key in dataset:
-            h5_dataset.create_dataset(key, data=dataset[key], compression='gzip')
+        for key, value in dataset.items():
+            h5_dataset.create_dataset(key, data=value, compression='gzip')
         print('Done.')
 
 

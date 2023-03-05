@@ -35,11 +35,8 @@ def cross_ent_loss(logits, target):
         label = jax.nn.one_hot(target, num_classes=2)
     else:
         label = target
-        
-    loss = jnp.mean(optax.softmax_cross_entropy(
-        logits=logits, 
-        labels=label))
-    return loss
+
+    return jnp.mean(optax.softmax_cross_entropy(logits=logits, labels=label))
 
 def kld_loss(p, q):
     return jnp.mean(jnp.sum(jnp.where(p != 0, p * (jnp.log(p) - jnp.log(q)), 0), axis=-1))

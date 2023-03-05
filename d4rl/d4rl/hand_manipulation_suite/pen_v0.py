@@ -24,7 +24,7 @@ class PenEnvV0(mujoco_env.MujocoEnv, utils.EzPickle, offline_env.OfflineEnv):
         self.tar_length = 1.0
 
         curr_dir = os.path.dirname(os.path.abspath(__file__))
-        mujoco_env.MujocoEnv.__init__(self, curr_dir+'/assets/DAPG_pen.xml', 5)
+        mujoco_env.MujocoEnv.__init__(self, f'{curr_dir}/assets/DAPG_pen.xml', 5)
 
         # Override action_space to -1, 1
         self.action_space = spaces.Box(low=-1.0, high=1.0, dtype=np.float32, shape=self.action_space.shape)
@@ -84,9 +84,9 @@ class PenEnvV0(mujoco_env.MujocoEnv, utils.EzPickle, offline_env.OfflineEnv):
         done = False
         if obj_pos[2] < 0.075:
             reward -= 5
-            done = True if not starting_up else False
+            done = not starting_up
 
-        goal_achieved = True if (dist < 0.075 and orien_similarity > 0.95) else False
+        goal_achieved = dist < 0.075 and orien_similarity > 0.95
 
         return self.get_obs(), reward, done, dict(goal_achieved=goal_achieved)
 
@@ -138,11 +138,8 @@ class PenEnvV0(mujoco_env.MujocoEnv, utils.EzPickle, offline_env.OfflineEnv):
         self.viewer.cam.distance = 1.0
 
     def evaluate_success(self, paths):
-        num_success = 0
         num_paths = len(paths)
-        # success if pen within 15 degrees of target for 20 steps
-        for path in paths:
-            if np.sum(path['env_infos']['goal_achieved']) > 20:
-                num_success += 1
-        success_percentage = num_success*100.0/num_paths
-        return success_percentage
+        num_success = sum(
+            np.sum(path['env_infos']['goal_achieved']) > 20 for path in paths
+        )
+        return num_success*100.0/num_paths

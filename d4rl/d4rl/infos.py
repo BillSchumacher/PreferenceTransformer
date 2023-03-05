@@ -2,6 +2,7 @@
 This file holds all URLs and reference scores.
 """
 
+
 #TODO(Justin): This is duplicated. Make all __init__ file URLs and scores point to this file.
 
 DATASET_URLS = {
@@ -288,24 +289,30 @@ REF_MAX_SCORE = {
 for env in ['halfcheetah', 'hopper', 'walker2d', 'ant']:
     for dset in ['random', 'medium', 'expert', 'medium-replay', 'full-replay', 'medium-expert']:
         #v1 envs
-        dset_name = env+'_'+dset.replace('-', '_')+'-v1'
+        dset_name = f'{env}_' + dset.replace('-', '_') + '-v1'
         env_name = dset_name.replace('_', '-')
-        DATASET_URLS[env_name] = 'http://rail.eecs.berkeley.edu/datasets/offline_rl/gym_mujoco_v1/%s.hdf5' % dset_name
-        REF_MIN_SCORE[env_name] = REF_MIN_SCORE[env+'-random-v0']
-        REF_MAX_SCORE[env_name] = REF_MAX_SCORE[env+'-random-v0']
+        DATASET_URLS[
+            env_name
+        ] = f'http://rail.eecs.berkeley.edu/datasets/offline_rl/gym_mujoco_v1/{dset_name}.hdf5'
+        REF_MIN_SCORE[env_name] = REF_MIN_SCORE[f'{env}-random-v0']
+        REF_MAX_SCORE[env_name] = REF_MAX_SCORE[f'{env}-random-v0']
 
         #v2 envs
-        dset_name = env+'_'+dset.replace('-', '_')+'-v2'
+        dset_name = f'{env}_' + dset.replace('-', '_') + '-v2'
         env_name = dset_name.replace('_', '-')
-        DATASET_URLS[env_name] = 'http://rail.eecs.berkeley.edu/datasets/offline_rl/gym_mujoco_v2/%s.hdf5' % dset_name
-        REF_MIN_SCORE[env_name] = REF_MIN_SCORE[env+'-random-v0']
-        REF_MAX_SCORE[env_name] = REF_MAX_SCORE[env+'-random-v0']
+        DATASET_URLS[
+            env_name
+        ] = f'http://rail.eecs.berkeley.edu/datasets/offline_rl/gym_mujoco_v2/{dset_name}.hdf5'
+        REF_MIN_SCORE[env_name] = REF_MIN_SCORE[f'{env}-random-v0']
+        REF_MAX_SCORE[env_name] = REF_MAX_SCORE[f'{env}-random-v0']
 
 #Adroit v1 envs
 for env in ['hammer', 'pen', 'relocate', 'door']:
     for dset in ['human', 'expert', 'cloned']:
-        env_name = env+'-'+dset+'-v1'
-        DATASET_URLS[env_name] = 'http://rail.eecs.berkeley.edu/datasets/offline_rl/hand_dapg_v1/%s.hdf5' % env_name
-        REF_MIN_SCORE[env_name] = REF_MIN_SCORE[env+'-human-v0']
-        REF_MAX_SCORE[env_name] = REF_MAX_SCORE[env+'-human-v0']
+        env_name = f'{env}-{dset}-v1'
+        DATASET_URLS[
+            env_name
+        ] = f'http://rail.eecs.berkeley.edu/datasets/offline_rl/hand_dapg_v1/{env_name}.hdf5'
+        REF_MIN_SCORE[env_name] = REF_MIN_SCORE[f'{env}-human-v0']
+        REF_MAX_SCORE[env_name] = REF_MAX_SCORE[f'{env}-human-v0']
 

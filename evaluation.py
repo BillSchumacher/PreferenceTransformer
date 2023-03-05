@@ -17,7 +17,7 @@ def evaluate(agent: nn.Module, env: gym.Env,
             action = agent.sample_actions(observation, temperature=0.0)
             observation, _, done, info = env.step(action)
 
-        for k in stats.keys():
+        for k in stats:
             stats[k].append(info['episode'][k])
 
     for k, v in stats.items():

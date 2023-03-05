@@ -36,10 +36,7 @@ class SwimmerEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     # Check mujoco version is greater than version 1.50 to call correct physics
     # model containing PyMjData object for getting and setting position/velocity.
     # Check https://github.com/openai/mujoco-py/issues/80 for updates to api.
-    if mujoco_py.get_version() >= '1.50':
-      return self.sim
-    else:
-      return self.model
+    return self.sim if mujoco_py.get_version() >= '1.50' else self.model
 
   def _step(self, a):
     return self.step(a)
@@ -56,18 +53,13 @@ class SwimmerEnv(mujoco_env.MujocoEnv, utils.EzPickle):
     return ob, reward, False, dict(reward_fwd=reward_fwd, reward_ctrl=reward_ctrl)
 
   def _get_obs(self):
-    if self._expose_all_qpos:
-      obs = np.concatenate([
-          self.physics.data.qpos.flat[:5],  # Ensures only swimmer obs.
-          self.physics.data.qvel.flat[:5],
-      ])
-    else:
-      obs = np.concatenate([
-          self.physics.data.qpos.flat[2:5],
-          self.physics.data.qvel.flat[:5],
-      ])
-
-    return obs
+    return (np.concatenate([
+        self.physics.data.qpos.flat[:5],  # Ensures only swimmer obs.
+        self.physics.data.qvel.flat[:5],
+    ]) if self._expose_all_qpos else np.concatenate([
+        self.physics.data.qpos.flat[2:5],
+        self.physics.data.qvel.flat[:5],
+    ]))
 
   def reset_model(self):
     qpos = self.init_qpos + self.np_random.uniform(

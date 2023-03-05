@@ -69,7 +69,9 @@ def local_spec(map, xpnt):
            [6, 4],
            [6, 5]])
     """
-    Y = 0; X=1; O=2
+    Y = 0
+    X=1
+    O=2
     valmap={
         'y': Y,
         'x': X,
@@ -78,8 +80,7 @@ def local_spec(map, xpnt):
     gs = spec_from_string(map, valmap=valmap)
     ys = gs.find(Y)
     x = gs.find(X)
-    result = ys-x + np.array(xpnt)
-    return result
+    return ys-x + np.array(xpnt)
 
 
 
@@ -94,17 +95,13 @@ class GridSpec(object):
 
     def __getitem__(self, key):
         if self.out_of_bounds(key):
-            raise NotImplementedError("Out of bounds:"+str(key))
+            raise NotImplementedError(f"Out of bounds:{str(key)}")
         return self.__data[tuple(key)]
 
     def out_of_bounds(self, wh):
         """ Return true if x, y is out of bounds """
         w, h = wh
-        if w<0 or w>=self.__w:
-            return True
-        if h < 0 or h >= self.__h:
-            return True
-        return False
+        return True if w<0 or w>=self.__w else h < 0 or h >= self.__h
 
     def get_neighbors(self, k, xy=False):
         """ Return values of up, down, left, and right tiles """
@@ -112,9 +109,10 @@ class GridSpec(object):
             k = self.idx_to_xy(k)
         offsets = [np.array([0,-1]), np.array([0,1]),
                    np.array([-1,0]), np.array([1,0])]
-        neighbors = \
-            [self[k+offset] if (not self.out_of_bounds(k+offset)) else OUT_OF_BOUNDS for offset in offsets ]
-        return neighbors
+        return [
+            OUT_OF_BOUNDS if self.out_of_bounds(k + offset) else self[k + offset]
+            for offset in offsets
+        ]
 
     def get_value(self, k, xy=False):
         """ Return values of up, down, left, and right tiles """
@@ -141,13 +139,11 @@ class GridSpec(object):
         return self.__h
 
     def idx_to_xy(self, idx):
-        if hasattr(idx, '__len__'):  # array
-            x = idx % self.__w
-            y = np.floor(idx/self.__w).astype(np.int32)
-            xy = np.c_[x,y]
-            return xy
-        else:
+        if not hasattr(idx, '__len__'):
             return np.array([ idx % self.__w, int(np.floor(idx/self.__w))])
+        x = idx % self.__w
+        y = np.floor(idx/self.__w).astype(np.int32)
+        return np.c_[x,y]
 
     def xy_to_idx(self, key):
         shape = np.array(key).shape

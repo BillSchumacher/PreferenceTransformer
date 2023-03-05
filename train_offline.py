@@ -119,13 +119,12 @@ def make_env_and_dataset(env_name: str,
             dataset.rewards -= 1.0
         if ('halfcheetah' in FLAGS.env_name or 'walker2d' in FLAGS.env_name or 'hopper' in FLAGS.env_name):
             dataset.rewards += 0.5
-    else:
-        if 'antmaze' in FLAGS.env_name:
-            dataset.rewards -= 1.0
-            # See https://github.com/aviralkumar2907/CQL/blob/master/d4rl/examples/cql_antmaze_new.py#L22
-            # but I found no difference between (x - 0.5) * 4 and x - 1.0
-        elif ('halfcheetah' in FLAGS.env_name or 'walker2d' in FLAGS.env_name or 'hopper' in FLAGS.env_name):
-            normalize(dataset, FLAGS.env_name, max_episode_steps=env.env.env._max_episode_steps)
+    elif 'antmaze' in FLAGS.env_name:
+        dataset.rewards -= 1.0
+        # See https://github.com/aviralkumar2907/CQL/blob/master/d4rl/examples/cql_antmaze_new.py#L22
+        # but I found no difference between (x - 0.5) * 4 and x - 1.0
+    elif ('halfcheetah' in FLAGS.env_name or 'walker2d' in FLAGS.env_name or 'hopper' in FLAGS.env_name):
+        normalize(dataset, FLAGS.env_name, max_episode_steps=env.env.env._max_episode_steps)
 
     return env, dataset
 
@@ -138,8 +137,7 @@ def initialize_model():
 
     with open(model_path, "rb") as f:
         ckpt = pickle.load(f)
-    reward_model = ckpt['reward_model']
-    return reward_model
+    return ckpt['reward_model']
 
 
 def main(_):

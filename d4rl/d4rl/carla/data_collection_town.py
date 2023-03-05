@@ -132,11 +132,17 @@ class CustomGlobalRoutePlanner(GlobalRoutePlanner):
         #print('Diff:', origin, first_node_xy)
 
         #distance = 0.0
-        distances = []
-        distances.append(np.linalg.norm(np.array([origin.x, origin.y, 0.0]) - np.array(first_node_xy)))
-
-        for idx in range(len(node_list) - 1):
-            distances.append(super(CustomGlobalRoutePlanner, self)._distance_heuristic(node_list[idx], node_list[idx+1]))
+        distances = [
+            np.linalg.norm(
+                np.array([origin.x, origin.y, 0.0]) - np.array(first_node_xy)
+            )
+        ]
+        distances.extend(
+            super(CustomGlobalRoutePlanner, self)._distance_heuristic(
+                node_list[idx], node_list[idx + 1]
+            )
+            for idx in range(len(node_list) - 1)
+        )
         #print('Distances:', distances)
         #import pdb; pdb.set_trace()
         return np.sum(distances)
@@ -206,7 +212,7 @@ def draw_image(surface, image, blend=False):
 
 
 def get_font():
-    fonts = [x for x in pygame.font.get_fonts()]
+    fonts = list(pygame.font.get_fonts())
     default_font = 'ubuntumono'
     font = default_font if default_font in fonts else fonts[0]
     font = pygame.font.match_font(font)
@@ -214,13 +220,13 @@ def get_font():
 
 
 def should_quit():
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            return True
-        elif event.type == pygame.KEYUP:
-            if event.key == pygame.K_ESCAPE:
-                return True
-    return False
+    return any(
+        event.type != pygame.QUIT
+        and event.type == pygame.KEYUP
+        and event.key == pygame.K_ESCAPE
+        or event.type == pygame.QUIT
+        for event in pygame.event.get()
+    )
 
 
 def clamp(value, minimum=0.0, maximum=100.0):
@@ -303,7 +309,7 @@ class Weather(object):
         self.world.set_weather(self.weather)
 
     def __str__(self):
-        return '%s %s' % (self._sun, self._storm)
+        return f'{self._sun} {self._storm}'
 
 
 def parse_args():
@@ -316,8 +322,7 @@ def parse_args():
     parser.add_argument('--multiagent', default=False, action='store_true'),
     parser.add_argument('--lane', type=int, default=0)
     parser.add_argument('--lights', default=False, action='store_true')
-    args = parser.parse_args()
-    return args
+    return parser.parse_args()
 
 
 class CarlaEnv(object):

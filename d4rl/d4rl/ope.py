@@ -38,7 +38,7 @@ def get_returns(policy_id, discounted=False):
 
 
 def normalize(policy_id, score):
-    key = policy_id + '-v0'
+    key = f'{policy_id}-v0'
     min_score = infos.REF_MIN_SCORE[key]
     max_score = infos.REF_MAX_SCORE[key]
     return (score - min_score) / (max_score - min_score)
@@ -81,7 +81,7 @@ def precision_at_k_metric(policies, k=1, n_rel=None, discounted=False):
         n_rel = k
     top_k = sorted(policies, reverse=True, key=lambda x: get_returns(x, discounted=discounted))[:n_rel]
     policy_k = policies[:k]
-    score = sum([policy in top_k for policy in policy_k])
+    score = sum(policy in top_k for policy in policy_k)
     return float(score) / k
 
 
@@ -102,7 +102,7 @@ def recall_at_k_metric(policies, k=1, n_rel=None, discounted=False):
         n_rel = k
     top_k = sorted(policies, reverse=True, key=lambda x: get_returns(x, discounted=discounted))[:n_rel]
     policy_k = policies[:k]
-    score = sum([policy in policy_k for policy in top_k])
+    score = sum(policy in policy_k for policy in top_k)
     return float(score) / k
 
 
@@ -127,6 +127,9 @@ def policy_regret_metric(policy, expert_policies, discounted=False):
     Returns:
         The regret, which is value of the best expert minus the value of the policy.
     """
-    best_returns = max([get_returns(policy_key, discounted=discounted) for policy_key in expert_policies])
+    best_returns = max(
+        get_returns(policy_key, discounted=discounted)
+        for policy_key in expert_policies
+    )
     return normalize(policy, best_returns) - normalize(policy, get_returns(policy, discounted=discounted))
 

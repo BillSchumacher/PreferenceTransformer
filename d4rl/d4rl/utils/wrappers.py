@@ -56,7 +56,7 @@ class ProxyEnv(Env):
         self.__dict__.update(state)
 
     def __str__(self):
-        return '{}({})'.format(type(self).__name__, self.wrapped_env)
+        return f'{type(self).__name__}({self.wrapped_env})'
 
 
 class HistoryEnv(ProxyEnv, Env):
@@ -82,8 +82,7 @@ class HistoryEnv(ProxyEnv, Env):
         state = super().reset()
         self.history = deque(maxlen=self.history_len)
         self.history.append(state)
-        flattened_history = self._get_history().flatten()
-        return flattened_history
+        return self._get_history().flatten()
 
     def _get_history(self):
         observations = list(self.history)
@@ -129,7 +128,7 @@ class NormalizedBoxEnv(ProxyEnv):
             obs_std=None,
     ):
         ProxyEnv.__init__(self, env)
-        self._should_normalize = not (obs_mean is None and obs_std is None)
+        self._should_normalize = obs_mean is not None or obs_std is not None
         if self._should_normalize:
             if obs_mean is None:
                 obs_mean = np.zeros_like(env.observation_space.low)
@@ -168,4 +167,4 @@ class NormalizedBoxEnv(ProxyEnv):
         return next_obs, reward * self._reward_scale, done, info
 
     def __str__(self):
-        return "Normalized: %s" % self._wrapped_env
+        return f"Normalized: {self._wrapped_env}"

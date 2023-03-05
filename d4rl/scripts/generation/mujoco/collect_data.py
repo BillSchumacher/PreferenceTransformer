@@ -16,13 +16,12 @@ def load(pklfile):
     return params['trainer/policy']
 
 def get_pkl_itr(pklfile):
-    match = itr_re.search(pklfile)
-    if match:
+    if match := itr_re.search(pklfile):
         return match.group('itr')
-    raise ValueError(pklfile+" has no iteration number.")
+    raise ValueError(f"{pklfile} has no iteration number.")
 
 def get_policy_wts(params):
-    out_dict = {
+    return {
         'fc0/weight': params.fcs[0].weight.data.numpy(),
         'fc0/bias': params.fcs[0].bias.data.numpy(),
         'fc1/weight': params.fcs[1].weight.data.numpy(),
@@ -32,21 +31,19 @@ def get_policy_wts(params):
         'last_fc_log_std/weight': params.last_fc_log_std.weight.data.numpy(),
         'last_fc_log_std/bias': params.last_fc_log_std.bias.data.numpy(),
     }
-    return out_dict
 
 def get_reset_data():
-    data = dict(
-        observations = [],
-        next_observations = [],
-        actions = [],
-        rewards = [],
-        terminals = [],
-        timeouts = [],
-        logprobs = [],
-        qpos = [],
-        qvel = []
+    return dict(
+        observations=[],
+        next_observations=[],
+        actions=[],
+        rewards=[],
+        terminals=[],
+        timeouts=[],
+        logprobs=[],
+        qpos=[],
+        qvel=[],
     )
-    return data
 
 def rollout(policy, env_name, max_path, num_data, random=False):
     env = gym.make(env_name)
@@ -148,22 +145,18 @@ if __name__ == "__main__":
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
 
-    policy = None
-    if not args.random:
-        policy = load(args.pklfile)
+    policy = None if args.random else load(args.pklfile)
     data = rollout(policy, args.env, max_path=args.max_path, num_data=args.num_data, random=args.random)
 
     hfile = h5py.File(args.output_file, 'w')
     for k in data:
         hfile.create_dataset(k, data=data[k], compression='gzip')
 
-    if args.random:
-        pass
-    else:
+    if not args.random:
         hfile['metadata/algorithm'] = np.string_('SAC')
         hfile['metadata/iteration'] = np.array([get_pkl_itr(args.pklfile)], dtype=np.int32)[0]
         hfile['metadata/policy/nonlinearity'] = np.string_('relu')
         hfile['metadata/policy/output_distribution'] = np.string_('tanh_gaussian')
         for k, v in get_policy_wts(policy).items():
-            hfile['metadata/policy/'+k] = v
+            hfile[f'metadata/policy/{k}'] = v
     hfile.close()

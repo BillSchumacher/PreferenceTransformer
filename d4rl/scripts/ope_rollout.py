@@ -2,6 +2,7 @@
 This script runs rollouts on the OPE policies
 using the ONNX runtime and averages the returns.
 """
+
 import d4rl
 import gym
 import sys
@@ -24,7 +25,7 @@ all_returns = []
 for _ in range(args.num_rollouts):
     s = env.reset()
     returns = 0
-    for t in range(env._max_episode_steps):
+    for _ in range(env._max_episode_steps):
         obs_input = np.expand_dims(s, axis=0).astype(np.float32)
         noise_input = np.random.randn(1, env.action_space.shape[0]).astype(np.float32)
         action, _, _ = policy.run(None, {'observations': obs_input, 'noise': noise_input})

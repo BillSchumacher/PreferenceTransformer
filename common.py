@@ -61,11 +61,7 @@ class Model:
 
         _, params = variables.pop('params')
 
-        if tx is not None:
-            opt_state = tx.init(params)
-        else:
-            opt_state = None
-
+        opt_state = tx.init(params) if tx is not None else None
         return cls(step=1,
                    apply_fn=model_def,
                    params=params,

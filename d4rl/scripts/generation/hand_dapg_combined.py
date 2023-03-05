@@ -21,7 +21,7 @@ if __name__ == '__main__':
     parser.add_argument('--human', type=str, help='Human demos hdf5 dataset')
     args = parser.parse_args()
 
-    env = gym.make('%s-v0' % args.env_name)
+    env = gym.make(f'{args.env_name}-v0')
     human_dataset = h5py.File(args.human, 'r')
     bc_dataset = h5py.File(args.bc, 'r')
     N = env._max_episode_steps * 5000
@@ -30,16 +30,12 @@ if __name__ == '__main__':
     halfN = N // 2
     terms = bc_dataset['terminals'][:]
     tos = bc_dataset['timeouts'][:]
-    last_term = 0
-    for i in range(halfN, N):
-        if terms[i] or tos[i]:
-            last_term = i
-            break
+    last_term = next((i for i in range(halfN, N) if terms[i] or tos[i]), 0)
     halfN = last_term + 1
 
     remaining_N = N - halfN
 
-    aug_dataset = h5py.File('%s-cloned-v1.hdf5' % args.env_name, 'w')
+    aug_dataset = h5py.File(f'{args.env_name}-cloned-v1.hdf5', 'w')
     for k in get_keys(bc_dataset):
         if 'metadata' not in k:
             human_data = human_dataset[k][:]
@@ -63,8 +59,5 @@ if __name__ == '__main__':
         else:
             shape = bc_dataset[k].shape
             print('metadata:', k, shape)
-            if len(shape) == 0:
-                aug_dataset[k] = bc_dataset[k][()]
-            else:
-                aug_dataset[k] = bc_dataset[k][:]
+            aug_dataset[k] = bc_dataset[k][()] if len(shape) == 0 else bc_dataset[k][:]
 

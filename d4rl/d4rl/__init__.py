@@ -93,23 +93,14 @@ def qlearning_dataset(env, dataset=None, terminate_on_end=False, **kwargs):
     reward_ = []
     done_ = []
 
-    # The newer version of the dataset adds an explicit
-    # timeouts field. Keep old method for backwards compatability.
-    use_timeouts = False
-    if 'timeouts' in dataset:
-        use_timeouts = True
-
+    use_timeouts = 'timeouts' in dataset
     episode_step = 0
     for i in range(N-1):
         obs = dataset['observations'][i].astype(np.float32)
         new_obs = dataset['observations'][i+1].astype(np.float32)
         action = dataset['actions'][i].astype(np.float32)
         reward = dataset['rewards'][i].astype(np.float32)
-        # if 'maze' in env.spec.id:
-        if False:
-            done_bool = sum(dataset['infos/goal'][i+1] - dataset['infos/goal'][i]) > 0
-        else:
-            done_bool = bool(dataset['terminals'][i])
+        done_bool = bool(dataset['terminals'][i])
 
         if use_timeouts:
             final_timestep = dataset['timeouts'][i]
@@ -118,7 +109,7 @@ def qlearning_dataset(env, dataset=None, terminate_on_end=False, **kwargs):
         if (not terminate_on_end) and final_timestep:
             # Skip this transition and don't apply terminals on the last step of an episode
             episode_step = 0
-            continue  
+            continue
         if done_bool or final_timestep:
             episode_step = 0
 
@@ -161,12 +152,7 @@ def sequence_dataset(env, dataset=None, **kwargs):
     N = dataset['rewards'].shape[0]
     data_ = collections.defaultdict(list)
 
-    # The newer version of the dataset adds an explicit
-    # timeouts field. Keep old method for backwards compatability.
-    use_timeouts = False
-    if 'timeouts' in dataset:
-        use_timeouts = True
-
+    use_timeouts = 'timeouts' in dataset
     episode_step = 0
     for i in range(N):
         done_bool = bool(dataset['terminals'][i])
@@ -180,10 +166,7 @@ def sequence_dataset(env, dataset=None, **kwargs):
 
         if done_bool or final_timestep:
             episode_step = 0
-            episode_data = {}
-            for k in data_:
-                episode_data[k] = np.array(data_[k])
-            yield episode_data
+            yield {k: np.array(data_[k]) for k in data_}
             data_ = collections.defaultdict(list)
 
         episode_step += 1

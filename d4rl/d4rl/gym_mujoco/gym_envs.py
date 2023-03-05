@@ -37,4 +37,3 @@ def get_walker_env(**kwargs):
 
 if __name__ == '__main__':
     """Example usage of these envs"""
-    pass

@@ -53,13 +53,13 @@ class PrefTransformer(object):
             'sgd': optax.sgd,
         }[self.config.optimizer_type]
 
-        scheduler_class = {
+        if scheduler_class := {
             'CosineDecay': optax.warmup_cosine_decay_schedule(
                 init_value=self.config.trans_lr,
                 peak_value=self.config.trans_lr * 10,
                 warmup_steps=self.config.warmup_steps,
                 decay_steps=self.config.total_steps,
-                end_value=self.config.trans_lr
+                end_value=self.config.trans_lr,
             ),
             "OnlyWarmup": optax.join_schedules(
                 [
@@ -68,16 +68,12 @@ class PrefTransformer(object):
                         end_value=self.config.trans_lr,
                         transition_steps=self.config.warmup_steps,
                     ),
-                    optax.constant_schedule(
-                        value=self.config.trans_lr
-                    )
+                    optax.constant_schedule(value=self.config.trans_lr),
                 ],
-                [self.config.warmup_steps]
+                [self.config.warmup_steps],
             ),
-            'none': None
-        }[self.config.scheduler_type]
-
-        if scheduler_class:
+            'none': None,
+        }[self.config.scheduler_type]:
             tx = optimizer_class(scheduler_class)
         else:
             tx = optimizer_class(learning_rate=self.config.trans_lr)
@@ -99,10 +95,7 @@ class PrefTransformer(object):
         self._total_steps = 0
        
     def evaluation(self, batch):
-        metrics = self._eval_pref_step(
-            self._train_states, next_rng(), batch
-        )
-        return metrics
+        return self._eval_pref_step(self._train_states, next_rng(), batch)
 
     def get_reward(self, batch):
         return self._get_reward_step(self._train_states, batch)

@@ -2,11 +2,7 @@
 
 def run_policy_on_env(policy_fn, env, truncate_episode_at=None,
                       first_obs=None):
-  if first_obs is None:
-    obs = env.reset()
-  else:
-    obs = first_obs
-
+  obs = env.reset() if first_obs is None else first_obs
   trajectory = []
   step_num = 0
   while True:

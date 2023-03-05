@@ -46,11 +46,7 @@ class ActionBonus(gym.core.Wrapper):
         env = self.unwrapped
         tup = (tuple(env.agent_pos), env.agent_dir, action)
 
-        # Get the count for this (s,a) pair
-        pre_count = 0
-        if tup in self.counts:
-            pre_count = self.counts[tup]
-
+        pre_count = self.counts[tup] if tup in self.counts else 0
         # Update the count for this (s,a) pair
         new_count = pre_count + 1
         self.counts[tup] = new_count
@@ -81,11 +77,7 @@ class StateBonus(gym.core.Wrapper):
         env = self.unwrapped
         tup = (tuple(env.agent_pos))
 
-        # Get the count for this key
-        pre_count = 0
-        if tup in self.counts:
-            pre_count = self.counts[tup]
-
+        pre_count = self.counts[tup] if tup in self.counts else 0
         # Update the count for this key
         new_count = pre_count + 1
         self.counts[tup] = new_count
@@ -278,7 +270,9 @@ class FlatObsWrapper(gym.core.ObservationWrapper):
 
         # Cache the last-encoded mission string
         if mission != self.cachedStr:
-            assert len(mission) <= self.maxStrLen, 'mission string too long ({} chars)'.format(len(mission))
+            assert (
+                len(mission) <= self.maxStrLen
+            ), f'mission string too long ({len(mission)} chars)'
             mission = mission.lower()
 
             strArray = np.zeros(shape=(self.maxStrLen, self.numCharCodes), dtype='float32')

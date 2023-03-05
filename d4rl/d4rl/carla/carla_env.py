@@ -117,11 +117,17 @@ class CustomGlobalRoutePlanner(GlobalRoutePlanner):
         #print('Diff:', origin, first_node_xy)
 
         #distance = 0.0
-        distances = []
-        distances.append(np.linalg.norm(np.array([origin.x, origin.y, 0.0]) - np.array(first_node_xy)))
-
-        for idx in range(len(node_list) - 1):
-            distances.append(super(CustomGlobalRoutePlanner, self)._distance_heuristic(node_list[idx], node_list[idx+1]))
+        distances = [
+            np.linalg.norm(
+                np.array([origin.x, origin.y, 0.0]) - np.array(first_node_xy)
+            )
+        ]
+        distances.extend(
+            super(CustomGlobalRoutePlanner, self)._distance_heuristic(
+                node_list[idx], node_list[idx + 1]
+            )
+            for idx in range(len(node_list) - 1)
+        )
         #print('Distances:', distances)
         #import pdb; pdb.set_trace()
         return np.sum(distances)
@@ -254,7 +260,7 @@ class Weather(object):
         self.world.set_weather(self.weather)
 
     def __str__(self):
-        return '%s %s' % (self._sun, self._storm)
+        return f'{self._sun} {self._storm}'
 
 def clamp(value, minimum=0.0, maximum=100.0):
     return max(minimum, min(value, maximum))
@@ -334,17 +340,16 @@ class CarlaEnv(object):
 
         if self.record_display or self.record_vision:
             if self.record_dir is None:
-                self.record_dir = "carla-{}-{}x{}-fov{}".format(
-                    self.map.name.lower(), self.vision_size, self.vision_size, self.vision_fov)
+                self.record_dir = f"carla-{self.map.name.lower()}-{self.vision_size}x{self.vision_size}-fov{self.vision_fov}"
                 if self.frame_skip > 1:
-                    self.record_dir += '-{}'.format(self.frame_skip)
+                    self.record_dir += f'-{self.frame_skip}'
                 if self.changing_weather_speed > 0.0:
                     self.record_dir += '-weather'
                 if self.multiagent:
                     self.record_dir += '-mutiagent'
                 if self.follow_traffic_lights:
                     self.record_dir += '-lights'
-                self.record_dir += '-{}k'.format(self.max_episode_steps // 1000)
+                self.record_dir += f'-{self.max_episode_steps // 1000}k'
 
                 now = datetime.datetime.now()
                 self.record_dir += now.strftime("-%Y-%m-%d-%H-%M-%S")
@@ -361,7 +366,7 @@ class CarlaEnv(object):
         # dummy variables, to match deep mind control's APIs
         low = -1.0
         high = 1.0
-        
+
         self.action_space = spaces.Box(low=np.array((low, low)), high=np.array((high, high)))
 
         self.observation_space = DotMap()
@@ -391,7 +396,7 @@ class CarlaEnv(object):
         self.object_list = self.actor_list.filter("*traffic.*")
 
         # town nav
-        self.route_planner_dao = GlobalRoutePlannerDAO(self.map, sampling_resolution=0.1) 
+        self.route_planner_dao = GlobalRoutePlannerDAO(self.map, sampling_resolution=0.1)
         self.route_planner = CustomGlobalRoutePlanner(self.route_planner_dao)
         self.route_planner.setup()
         self.target_location = carla.Location(x=-13.473097, y=134.311234, z=-0.010433)
@@ -507,15 +512,15 @@ class CarlaEnv(object):
             batch.append(carla.command.SpawnActor(blueprint, transform).then(
                 carla.command.SetAutopilot(carla.command.FutureActor, True)))
 
-        for response in self.client.apply_batch_sync(batch, False):
-            self.vehicles_list.append(response.actor_id)
-
-        for response in self.client.apply_batch_sync(batch):
-            if response.error:
-                pass
-            else:
-                self.vehicles_list.append(response.actor_id)
-
+        self.vehicles_list.extend(
+            response.actor_id
+            for response in self.client.apply_batch_sync(batch, False)
+        )
+        self.vehicles_list.extend(
+            response.actor_id
+            for response in self.client.apply_batch_sync(batch)
+            if not response.error
+        )
         traffic_manager.global_percentage_speed_difference(30.0)
     
     def step(self, action=None, traffic_light_color=""):
@@ -618,11 +623,15 @@ class CarlaEnv(object):
             if dot_ve_wp < 0:
                 continue
 
-            if is_within_distance_ahead(object_waypoint.transform,
-                                        vehicle.get_transform(),
-                                        self._traffic_light_threshold):
-                if traffic_light.state == carla.TrafficLightState.Red:
-                    return (True, -0.1, traffic_light)
+            if (
+                is_within_distance_ahead(
+                    object_waypoint.transform,
+                    vehicle.get_transform(),
+                    self._traffic_light_threshold,
+                )
+                and traffic_light.state == carla.TrafficLightState.Red
+            ):
+                return (True, -0.1, traffic_light)
 
         return (False, 0.0, None)
 
@@ -695,24 +704,26 @@ class CarlaEnv(object):
             # Weird bug where the graph disappears
             vel_forward = 0
             vel_perp = 0
-        
+
         #print('[GoalReachReward] VehLoc: %s Target: %s Dist: %s VelF:%s' % (str(vehicle_location), str(target_location), str(dist), str(vel_forward)))
 
         #base_reward = -1.0 * (dist / 100.0) + 5.0
-        base_reward = vel_forward 
+        base_reward = vel_forward
         collided_done, collision_reward = self._get_collision_reward(vehicle)
         traffic_light_done, traffic_light_reward = self._get_traffic_light_reward(vehicle)
         object_collided_done, object_collided_reward = self._get_object_collided_reward(vehicle)
         total_reward = base_reward + 100 * collision_reward # + 100 * traffic_light_reward + 100.0 * object_collided_reward
-        reward_dict = dict()
-        reward_dict['collision'] = collision_reward
-        reward_dict['traffic_light'] = traffic_light_reward
-        reward_dict['object_collision'] = object_collided_reward
-        reward_dict['base_reward'] = base_reward
-        done_dict = dict()
-        done_dict['collided_done'] = collided_done
-        done_dict['traffic_light_done'] = traffic_light_done
-        done_dict['object_collided_done'] = object_collided_done
+        reward_dict = {
+            'collision': collision_reward,
+            'traffic_light': traffic_light_reward,
+            'object_collision': object_collided_reward,
+            'base_reward': base_reward,
+        }
+        done_dict = {
+            'collided_done': collided_done,
+            'traffic_light_done': traffic_light_done,
+            'object_collided_done': object_collided_done,
+        }
         return total_reward, reward_dict, done_dict
 
     def lane_follow_reward(self, vehicle):
@@ -726,12 +737,12 @@ class CarlaEnv(object):
         # print ('Velocity: ', vehicle_velocity_xy)
         speed = np.linalg.norm(vehicle_velocity_xy)
         vehicle_waypoint_closest_to_road = \
-            self.map.get_waypoint(vehicle_location, project_to_road=True, lane_type=carla.LaneType.Driving)
+                self.map.get_waypoint(vehicle_location, project_to_road=True, lane_type=carla.LaneType.Driving)
         road_id = vehicle_waypoint_closest_to_road.road_id
         assert road_id is not None
         goal_abs_lane_id = 1  # just for goal-following
         lane_id_sign = int(np.sign(vehicle_waypoint_closest_to_road.lane_id))
-        assert lane_id_sign in [-1, 1]
+        assert lane_id_sign in {-1, 1}
         goal_lane_id = goal_abs_lane_id * lane_id_sign
         current_waypoint = self.map.get_waypoint(vehicle_location, project_to_road=False)
         goal_waypoint = self.map.get_waypoint_xodr(road_id, goal_lane_id, vehicle_s)
@@ -742,8 +753,8 @@ class CarlaEnv(object):
             # try to fix, bit of a hack, with CARLA waypoint discretizations
             carla_waypoint_discretization = 0.02  # meters
             goal_waypoint = self.map.get_waypoint_xodr(road_id, goal_lane_id, vehicle_s - carla_waypoint_discretization)
-            if goal_waypoint is None:
-                goal_waypoint = self.map.get_waypoint_xodr(road_id, goal_lane_id, vehicle_s + carla_waypoint_discretization)
+        if goal_waypoint is None:
+            goal_waypoint = self.map.get_waypoint_xodr(road_id, goal_lane_id, vehicle_s + carla_waypoint_discretization)
 
         # set distance to 100 if the waypoint is off the road
         if goal_waypoint is None:
@@ -761,13 +772,10 @@ class CarlaEnv(object):
                     loc = wp.transform.location
                     xy = np.array([loc.x, loc.y])
                     dists.append(np.linalg.norm(vehicle_xy - xy))
-            if dists:
-                dist = min(dists)  # just try to get to the center of one of the lanes
-            else:
-                dist = 0.
+            dist = min(dists, default=0.)
             next_goal_waypoint = goal_waypoint.next(0.1)  # waypoints are ever 0.02 meters
             if len(next_goal_waypoint) != 1:
-                print('warning: {} waypoints (not 1)'.format(len(next_goal_waypoint)))
+                print(f'warning: {len(next_goal_waypoint)} waypoints (not 1)')
             if len(next_goal_waypoint) == 0:
                 print("Episode done: no more waypoints left. (frame %d)" % self.count)
                 done, vel_s, vel_perp = True, 0., 0.
@@ -804,18 +812,20 @@ class CarlaEnv(object):
         traffic_light_done, traffic_light_reward = self._get_traffic_light_reward(vehicle)
         object_collided_done, object_collided_reward = self._get_object_collided_reward(vehicle)
         total_reward = base_reward + 100 * collision_reward + 100 * traffic_light_reward + 100.0 * object_collided_reward
-        reward_dict = dict()
-        reward_dict['collision'] = collision_reward
-        reward_dict['traffic_light'] = traffic_light_reward
-        reward_dict['object_collision'] = object_collided_reward
-        reward_dict['base_reward'] = base_reward
-        reward_dict['base_reward_vel_s'] = vel_s
-        reward_dict['base_reward_vel_perp'] = vel_perp
-        done_dict = dict()
-        done_dict['collided_done'] = collided_done
-        done_dict['traffic_light_done'] = traffic_light_done
-        done_dict['object_collided_done'] = object_collided_done
-        done_dict['base_done'] = done
+        reward_dict = {
+            'collision': collision_reward,
+            'traffic_light': traffic_light_reward,
+            'object_collision': object_collided_reward,
+            'base_reward': base_reward,
+            'base_reward_vel_s': vel_s,
+            'base_reward_vel_perp': vel_perp,
+        }
+        done_dict = {
+            'collided_done': collided_done,
+            'traffic_light_done': traffic_light_done,
+            'object_collided_done': object_collided_done,
+            'base_done': done,
+        }
         return total_reward, reward_dict, done_dict
     
     def _simulator_step(self, action, traffic_light_color):

@@ -29,11 +29,7 @@ def append_data(data, s, a, tgt, done, pos, ori):
 
 def npify(data):
     for k in data:
-        if k == 'terminals':
-            dtype = np.bool_
-        else:
-            dtype = np.float32
-
+        dtype = np.bool_ if k == 'terminals' else np.float32
         data[k] = np.array(data[k], dtype=dtype)
 
 def main():
@@ -78,11 +74,8 @@ def main():
             ts = 0
         else:
             s = ns
-    
-    if args.random:
-        fname = 'minigrid4rooms_random.hdf5'
-    else:
-        fname = 'minigrid4rooms.hdf5' 
+
+    fname = 'minigrid4rooms_random.hdf5' if args.random else 'minigrid4rooms.hdf5'
     dataset = h5py.File(fname, 'w')
     npify(data)
     for k in data:
